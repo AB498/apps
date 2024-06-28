@@ -1,7 +1,7 @@
 // npm i -g nodemon express http-proxy-middleware dotenv
 
 require('dotenv').config();
-const PORT = process.env.PORT || 80;
+const port = process.env.PORT || 80;
 
 const express = require('express');
 const http = require('http');
@@ -15,6 +15,7 @@ const app = express();
 // const server = http.createServer(app);
 
 let server;
+let protocol;
 
 let privateKey = '/etc/letsencrypt/live/world.ovh/privkey.pem';
 let certificate = '/etc/letsencrypt/live/world.ovh/fullchain.pem';
@@ -24,8 +25,12 @@ if (fs.existsSync(privateKey) && fs.existsSync(certificate)) {
         key: fs.readFileSync(privateKey),
         cert: fs.readFileSync(certificate)
     }, app);
+    protocol = 'https';
+    port = 443;
 } else {
     server = http.createServer(app);
+    protocol = 'http';
+    port = 80;
 }
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -45,7 +50,7 @@ app.get('/apps/:appname', (req, res, next) => {
 });
 
 
-let tmpPort = PORT;
+let tmpPort = port;
 for (let appname of appnames) {
     tmpPort++;
     const app1 = require('./apps/' + appname + '/server.js');
@@ -60,5 +65,5 @@ for (let appname of appnames) {
     );
 }
 server.listen(80, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on ${protocol}://localhost:${port}`);
 });
