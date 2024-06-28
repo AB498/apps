@@ -5,13 +5,27 @@ const PORT = process.env.PORT || 80;
 
 const express = require('express');
 const http = require('http');
+const https = require('https');
 const path = require('path');
 
 const { createProxyMiddleware, Filter, Options, RequestHandler } = require('http-proxy-middleware');
 
 const app = express();
-const server = http.createServer(app);
+// const server = http.createServer(app);
 
+let server;
+
+let privateKey = '/etc/letsencrypt/live/world.ovh/privkey.pem';
+let certificate = '/etc/letsencrypt/live/world.ovh/fullchain.pem';
+
+if (fs.existsSync(privateKey) && fs.existsSync(certificate)) {
+    server = https.createServer({
+        key: privateKey,
+        cert: certificate
+    }, app);
+} else {
+    server = http.createServer(app);
+}
 
 app.use(express.static(path.join(__dirname, 'public')));
 
