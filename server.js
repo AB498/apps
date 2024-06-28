@@ -1,3 +1,5 @@
+// npm i -g nodemon express http-proxy-middleware dotenv
+
 const PORT = process.env.PORT || 80;
 
 const express = require('express');
@@ -16,8 +18,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', (req, res) => {
     res.send('Hello World!');
 });
-
-
 
 
 let appnames = ['institution-management'];
