@@ -21,8 +21,8 @@ let certificate = '/etc/letsencrypt/live/world.ovh/fullchain.pem';
 
 if (fs.existsSync(privateKey) && fs.existsSync(certificate)) {
     server = https.createServer({
-        key: privateKey,
-        cert: certificate
+        key: fs.readFileSync(privateKey),
+        cert: fs.readFileSync(certificate)
     }, app);
 } else {
     server = http.createServer(app);
