@@ -1,7 +1,7 @@
 // npm i -g nodemon express http-proxy-middleware dotenv
 
 require('dotenv').config();
-const port = process.env.PORT || 80;
+let port = process.env.PORT || 80;
 
 const express = require('express');
 const http = require('http');
