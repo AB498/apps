@@ -64,6 +64,6 @@ for (let appname of appnames) {
         }),
     );
 }
-server.listen(80, () => {
+server.listen(port, () => {
     console.log(`Server running on ${protocol}://localhost:${port}`);
 });
