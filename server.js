@@ -1,5 +1,6 @@
 // npm i -g nodemon express http-proxy-middleware dotenv
 
+require('dotenv').config();
 const PORT = process.env.PORT || 80;
 
 const express = require('express');
@@ -11,7 +12,6 @@ const { createProxyMiddleware, Filter, Options, RequestHandler } = require('http
 const app = express();
 const server = http.createServer(app);
 
-require('dotenv').config();
 
 app.use(express.static(path.join(__dirname, 'public')));
 
