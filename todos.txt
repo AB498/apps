@@ -1,0 +1,6 @@
+reg for enrollment/check enrollment
+reg for next sem/check sems
+progress and fees
+schedule
+result
+profile

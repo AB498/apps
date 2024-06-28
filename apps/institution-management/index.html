@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
+
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            preflights: false
+        };
+    </script>
+
+    <!-- faltui -->
+    <link rel="stylesheet"
+        href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flat-ui/2.3.0/js/vendor/jquery.min.js"></script>
+
+    <!-- <script src="https://cdn.jsdelivr.net/npm/pocketbase@0.21.3/dist/pocketbase.umd.min.js"></script> -->
+
+
+<body>
+    <div id="root"></div>
+
+
+
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-router-dom/5.3.4/react-router-dom.js"></script>
+
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/react-transition-group/4.4.5/react-transition-group.js"></script>
+
+    <script type="text/babel" data-type="module" src="main.jsx"></script>
+
+    <script>
+        // utils
+
+        async function downImage(url) {
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                // rename the blob file
+                const renamedBlob = new File([blob], "newFileName.jpg");
+                return renamedBlob;
+            } catch (e) {
+                console.log("Failed image download", url);
+            }
+        }
+
+        const consoleWarn = console.error;
+        const SUPPRESSED_WARNINGS = [
+            "Warning: You are calling ReactDOMClient.createRoot()",
+            "Warning: React has detected a change in the order of Hooks",
+            "Warning: ReactDOM.render is no longer supported",
+            "Warning: `value` prop on `input` should not be null",
+            "cdn.tailwindcss.com should not be used in production",
+            "Download the React DevTools",
+            "You are using the in-browser Babel",
+            "Warning: A component is changing an uncontrolled",
+            "Warning: Invalid DOM property",
+            'Each child in a list should have a unique "key" prop',
+        ];
+
+        ["error"].forEach(
+            (method) =>
+            (console[method] = function filterWarnings(msg, ...args) {
+                try {
+                    if (!SUPPRESSED_WARNINGS.some((entry) => msg.includes(entry))) {
+                        consoleWarn(msg, ...args);
+                    }
+                } catch (e) { }
+            })
+        );
+        function styleToObject(style) {
+            if (!style) return null;
+            let obj = {};
+            style.split(";").forEach((s) => {
+                let keyval = s.split(":");
+                let [key, value] = [keyval[0], keyval.slice(1).join(":")];
+                key = key.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+                obj[key.trim()] = value.trim();
+            });
+            return obj;
+        }
+        function isClass(v) {
+            if (typeof v !== "function") {
+                return false;
+            }
+            try {
+                v();
+                return false;
+            } catch (error) {
+                if (/^Class constructor/.test(error.message)) {
+                    return true;
+                }
+                return false;
+            }
+        }
+        function funcType(x) {
+            return typeof x === "function" ? (x.prototype ? (Object.getOwnPropertyDescriptor(x, "prototype").writable ? "function" : "class") : x.constructor.name === "AsyncFunction" ? "async" : "arrow") : "";
+        }
+        function isFunction(x) {
+            return typeof x === "function" ? (x.prototype ? (Object.getOwnPropertyDescriptor(x, "prototype").writable ? true : false) : true) : false;
+            // return typeof x === "function" && x.prototype && Object.getOwnPropertyDescriptor(x, "prototype").writable ? true : false;
+        }
+        let poll = async (fn, t, breakTimeout) => {
+            let canceller;
+            let ended = false;
+            if (breakTimeout) {
+                canceller = setTimeout(() => {
+                    console.log("Timeout");
+                    ended = true;
+                    return;
+                }, breakTimeout);
+            }
+            while (!ended) {
+                let res = await fn();
+                if (res) {
+                    canceller && clearTimeout(canceller);
+                    return res;
+                }
+                await new Promise((r) => setTimeout(r, t || 200));
+            }
+        };
+
+        function cons(...args) {
+            console.log(...args);
+            return args[0];
+        }
+
+        function timeout(ms) {
+            return new Promise((resolve) => setTimeout(resolve, ms));
+        }
+        function uuid() {
+            return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+                var r = (Math.random() * 16) | 0,
+                    v = c == "x" ? r : (r & 0x3) | 0x8;
+                return v.toString(16);
+            });
+        }
+
+        function isJSONObject(obj) {
+            if ([Date, RegExp, Error].some((t) => obj instanceof t) || Array.isArray(obj)) {
+                return false;
+            }
+            try {
+                safeStringify(obj);
+                return obj && typeof obj == "object";
+            } catch (e) {
+                return false;
+            }
+        }
+
+        let safeStringify = function (...args) {
+            let replacer = ((obj) => {
+                let cache = [];
+                return (key, value) => {
+                    if (isFunction(value)) {
+                        return "" + value;
+                    }
+                    return typeof value === "object" && value !== null
+                        ? cache.includes(value)
+                            ? undefined // Duplicate reference found, discard key
+                            : cache.push(value) && value // Store value in our collection
+                        : value;
+                };
+            })();
+            return JSON.stringify(args[0], replacer, ...args.slice(2));
+        };
+        let safeParse = function (...args) {
+            try {
+                // Define a reviver function to handle parsing functions
+                const reviver = (key, value) => {
+                    if (typeof value === "string" && value.startsWith("function")) {
+                        // If the value is a string starting with 'function', parse it back to a function
+                        const functionStr = `(${value})`;
+                        return eval(functionStr); // Using eval to convert string to function
+                    }
+                    return value;
+                };
+
+                return JSON.parse(args[0], reviver);
+            } catch (e) {
+                console.error(e);
+                return null;
+            }
+        };
+
+        String.prototype.toTitleCase = function () {
+            let str = this.toLowerCase();
+            str = str.split(" ");
+            for (var i = 0; i < str.length; i++) {
+                str[i] = str[i].charAt(0).toUpperCase() + str[i].slice(1);
+            }
+            return str.join(" ");
+        };
+
+
+        function setTheme(theme) {
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark')
+            }
+
+            localStorage.setItem('color-theme', theme);
+        }
+
+        setTheme(localStorage.getItem('color-theme') === 'dark' ? 'dark' : 'light');
+
+    </script>
+
+    <!-- <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script> -->
+    <script type="module">
+
+        import { faker } from "https://cdn.skypack.dev/new/@faker-js/faker@v8.3.1/dist=es2019";
+        window.faker = faker;
+
+        import * as PocketBase from 'https://cdn.jsdelivr.net/npm/pocketbase@0.21.3/+esm'
+        window.PocketBase = PocketBase;
+        console.log('PocketBase', PocketBase);
+
+        import * as sucrase from 'https://cdn.pika.dev/sucrase';
+        if (typeof sucrase !== 'undefined') {
+            window.sucrase = sucrase;
+            document.querySelectorAll('script[type="text/babel"]').forEach(async (code) => eval(sucrase.transform(code.src ? await (await fetch(code.src)).text() : code.innerHTML, { transforms: ['jsx'] }).code));
+        }
+
+        let transform = window.sucrase ? (code) => window.sucrase.transform(code, { transforms: ['jsx'] }).code : (code) => window.Babel.transform(code, { presets: ['react'] });
+        let fileUpdateMap = {};
+        async function watchFiles(file, cb) {
+            let code = await (await fetch(file)).text();
+            if (fileUpdateMap[file] && (fileUpdateMap[file] != code)) cb(file, code);
+            fileUpdateMap[file] = code;
+            await sleep(500);
+            watchFiles(file, cb);
+
+
+        };
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+
+        watchFiles('main.jsx', (file, content) => {
+            console.log('reloaded', file, new Date().toTimeString().replace(/\s.*/, ''));
+            eval(transform(content));
+        });
+
+        watchFiles('index.html', (file, content) => {
+            console.log('reloaded', file, new Date().toTimeString().replace(/\s.*/, ''));
+            window.location.reload();
+        });
+
+
+    </script>
+
+</body>
+
+</html>
