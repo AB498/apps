@@ -7,7 +7,7 @@ const express = require('express');
 const http = require('http');
 const https = require('https');
 const path = require('path');
-cosnt fs = require('fs');
+const fs = require('fs');
 
 const { createProxyMiddleware, Filter, Options, RequestHandler } = require('http-proxy-middleware');
 
