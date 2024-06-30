@@ -4,10 +4,11 @@
         ".git",
         "node_modules/**/node_modules"
     ],
-    "exec": "node server.js",
+    "exec": "node --trace-deprecation server.js || echo . > x.restart",
     "watch": [
         "**/*.js",
-        "**/*.json"
+        "**/*.json",
+        "**/*.restart"
     ],
-    "ext": "js,json"
+    "ext": "js,json,restart"
 }

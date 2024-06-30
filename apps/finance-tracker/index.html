@@ -1,12 +1,62 @@
+<link rel="stylesheet"
+href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flat-ui/2.3.0/js/vendor/jquery.min.js"></script>
+
+
+<link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" />
 
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<!-- <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script> -->
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/react-router-dom@5/umd/react-router-dom.min.js"></script>
 
+<script src="https://cdn.jsdelivr.net/npm/pocketbase@0.21.3/dist/pocketbase.umd.min.js"></script>
+
 <script type="text/babel" data-type="module" src="main.jsx"></script>
 
+<style>
+    .center {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .full {
+        width: 100%;
+        height: 100%;
+    }
+</style>
 
 <div id="root"></div>
+
+<script type="module">
+    import * as sucrase from 'https://cdn.pika.dev/sucrase';
+    if (typeof sucrase !== 'undefined') {
+        window.sucrase = sucrase;
+        document.querySelectorAll('script[type="text/babel"]').forEach(async (code) => eval(sucrase.transform(code.src ? await (await fetch(code.src)).text() : code.innerHTML, { transforms: ['jsx'] }).code));
+    }
+
+    let transform = window.sucrase ? (code) => window.sucrase.transform(code, { transforms: ['jsx'] }).code : (code) => window.Babel.transform(code, { presets: ['react'] }).code;
+
+    let fileUpdateMap = {};
+    async function watchFiles(file, cb) {
+        let code = await (await fetch(file + '?t=' + new Date().getTime())).text();
+        if (fileUpdateMap[file] && (fileUpdateMap[file] != code)) cb(file, code);
+        fileUpdateMap[file] = code;
+        new Promise(r => setTimeout(r, 500));
+        watchFiles(file, cb);
+    };
+
+    watchFiles('main.jsx', (file, content) => {
+        console.log('reloaded', file, new Date().toTimeString().replace(/\s.*/, ''));
+        eval(transform(content));
+    });
+
+    watchFiles('index.html', (file, content) => {
+        console.log('reloaded', file, new Date().toTimeString().replace(/\s.*/, ''));
+        window.location.reload();
+    });
+
+
+</script>

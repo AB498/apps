@@ -36,11 +36,11 @@ if (fs.existsSync(privateKey) && fs.existsSync(certificate)) {
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/', (req, res) => {
-    res.send('Hello World!');
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 
-let appnames = ['institution-management'];
+let appnames = ['finance-tracker', 'institution-management'];
 
 app.get('/apps/:appname', (req, res, next) => {
     // console.log(req.url.split('/'));
@@ -52,14 +52,15 @@ app.get('/apps/:appname', (req, res, next) => {
 
 let tmpPort = port;
 for (let appname of appnames) {
-    tmpPort++;
+    let prt = ++tmpPort;
+    console.log('Starting ' + prt);
     const app1 = require('./apps/' + appname + '/server.js');
-    app1.listen(tmpPort, () => {
-        console.log(`Server running on http://localhost:${tmpPort}`);
+    app1.listen(prt, () => {
+        console.log(`App: ${appname} running on http://localhost:${prt}`);
     });
     app.use('/apps/' + appname,
         createProxyMiddleware({
-            target: 'http://localhost:' + tmpPort,
+            target: 'http://localhost:' + prt,
             changeOrigin: true,
         }),
     );

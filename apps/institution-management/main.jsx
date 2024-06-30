@@ -1,6 +1,13 @@
 (async () => {
 
     await poll(() => window.PocketBase);
+    function uuid() {
+        return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+            var r = (Math.random() * 16) | 0,
+                v = c == "x" ? r : (r & 0x3) | 0x8;
+            return v.toString(16);
+        });
+    }
 
 
 
@@ -24,7 +31,7 @@
     //     initial: localStorage.getItem('pb_auth'),
     // });
 
-    const pb = new PocketBase.default('http://139.99.88.81:8090'); // ,store
+    const pb = new PocketBase.default('http://world.ovh/pb'); // ,store
     window.pb = pb;
 
     function App() {
@@ -42,10 +49,10 @@
             });
         }, []);
 
-        if (!user) return <AuthPage />
-        return (
+        return <div className="text-black bg-white dark:bg-black dark:text-white">{user ? (
             <Layout topBar={<TopBar />} content={<Content />} sideBar={<SideBar />} />
-        )
+        ) : (<AuthPage />)}
+        </div>;
     };
 
     function TopBar() {
@@ -53,7 +60,7 @@
             initFlowbite();
         }, [])
         return (
-            <div className="flex items-center w-full p-4 border gap-4">
+            <div className="flex items-center w-full gap-4 p-4 border">
                 <div class="text-center">
                     <button class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-full aspect-square text-sm w-10 h-10 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800" type="button" data-drawer-target="drawer-example" data-drawer-show="drawer-example" aria-controls="drawer-example">
                         <i class="fi fi-rr-bars-staggered"></i>
@@ -87,8 +94,9 @@
                     <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:w-5 after:h-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
                 </label>
 
-                <button class="flex items-center justify-center text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-full aspect-square text-sm w-10 h-10 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800" type="button" data-drawer-target="drawer-example" data-drawer-show="drawer-example" aria-controls="drawer-example">
-                    <i class="flex fi fi-rr-exit" onClick={() => pb.authStore.clear()}></i>
+                <button class="flex items-center justify-center text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-full aspect-square text-sm w-10 h-10 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800" type="button"
+                    onClick={() => pb.authStore.clear()}>
+                    <i class="flex fi fi-rr-exit"></i>
                 </button>
             </div>
         )
@@ -98,10 +106,11 @@
         const history = useHistory();
         if (history.location.pathname === '/') navigate('/auth/login');
         return (
-            <div className="flex md:flex-row flex-col h-screen">
-                <div className="w-full md:w-1/2 border-r">
+            <div className="flex flex-col h-screen md:flex-row">
+                <div className="w-full border-r md:w-1/2">
+                    <img src="https://picsum.photos/200/300?grayscale&blur=2" alt="" className="object-cover w-full h-full" />
                 </div>
-                <div className="w-full md:w-1/2 p-10 flex flex-col justify-center">
+                <div className="flex flex-col justify-center w-full p-10 md:w-1/2">
                     <Routes>
                         <Route path="/auth/login" ><LoginPage /></Route>
                         <Route path="/auth/register" ><RegisterPage /></Route>
@@ -110,46 +119,100 @@
             </div>
         );
     }
+
+    function getAbsoluteHeight(el) {
+        // Get the DOM Node if you pass in a string
+        el = (typeof el === 'string') ? document.querySelector(el) : el;
+
+        var styles = window.getComputedStyle(el);
+        var margin = parseFloat(styles['marginTop']) +
+            parseFloat(styles['marginBottom']);
+
+        return Math.ceil(el.offsetHeight + margin);
+    }
+
+    function ErrorDiv({ error }) {
+        let [height, setHeight] = useState(0);
+        let ref = useRef();
+
+        useEffect(() => {
+            setHeight(getAbsoluteHeight(ref.current));
+        }, [error]);
+        return (
+            <>
+                <div ref={ref} className="absolute invisible w-full p-2 overflow-hidden text-center text-red-500 bg-red-100 border rounded dark:bg-red-900 dark:text-red-100">{error}</div>
+                <div className={`text-center text-red-500 rounded overflow-hidden bg-red-100 dark:bg-red-900 dark:text-red-100 transition-all duration-300 ${error ? ('border border-red-500 p-2 h-[' + height + 'px]') : ('border-0 p-0 h-[0px]')}`} onScroll={(e) => setHeight(getAbsoluteHeight(ref.current))}>{error}</div>
+            </>
+        )
+    }
     function LoginPage() {
         async function login(e) {
             e.preventDefault();
-            let email = document.querySelector('input[name="email"]').value;
-            let password = document.querySelector('input[name="password"]').value;
+            setLoadings({ ...loadings, login: true });
+            setError(null);
+            let email = $('input[name="email"]').val();
+            let password = $('input[name="password"]').val();
 
             try {
+                console.log({ email: email, password: password });
                 const user = await pb.collection('users').authWithPassword(email, password);
-                console.log({ username: username, email: email, password: password });
                 console.log('user', user);
             } catch (error) {
                 console.log(error)
                 console.log(error?.data || 'Unknown error');
+                setError('Failed to login. Please check your credentials and try again.');
             }
+            setLoadings({ ...loadings, login: false });
         }
 
-        return (
-            <div className="flex flex-col">
+        let [loadings, setLoadings] = useState({});
 
-                <div className="bg-base-200 w-full max-w-[200px] flex items-center justify-center rounded-full aspect-square mx-auto shadow">
+        let [error, setError] = useState(null);
+
+        return (
+            <div className="flex flex-col w-full max-w-sm gap-4 mx-auto">
+
+                <div className="bg-base-200 w-full max-w-[200px] flex items-center justify-center rounded-full aspect-square mx-auto shadow border">
                     <i class="text-8xl fi fi-rr-user"></i>
                 </div>
-                <div className="my-2"></div>
-                <div className="text-3xl font-bold mx-auto">Sign in</div>
-                <div className="my-2"></div>
-                <div className="max-w-sm flex flex-col gap-2 mx-auto">
-                    <label class="input input-bordered flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 opacity-70"><path d="M2.5 3A1.5 1.5 0 0 0 1 4.5v.793c.026.009.051.02.076.032L7.674 8.51c.206.1.446.1.652 0l6.598-3.185A.755.755 0 0 1 15 5.293V4.5A1.5 1.5 0 0 0 13.5 3h-11Z" /><path d="M15 6.954 8.978 9.86a2.25 2.25 0 0 1-1.956 0L1 6.954V11.5A1.5 1.5 0 0 0 2.5 13h11a1.5 1.5 0 0 0 1.5-1.5V6.954Z" /></svg>
-                        <input type="text" class="grow" name="email" placeholder="Email" />
-                    </label>
-                    <label class="input input-bordered flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 opacity-70"><path fill-rule="evenodd" d="M14 6a4 4 0 0 1-4.899 3.899l-1.955 1.955a.5.5 0 0 1-.353.146H5v1.5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-2.293a.5.5 0 0 1 .146-.353l3.955-3.955A4 4 0 1 1 14 6Zm-4-2a.75.75 0 0 0 0 1.5.5.5 0 0 1 .5.5.75.75 0 0 0 1.5 0 2 2 0 0 0-2-2Z" clip-rule="evenodd" /></svg>
-                        <input type="password" class="grow" name="password" placeholder="Password" />
-                    </label>
-                    <button class="btn btn-primary w-full" onClick={login}>Login</button>
+                <div className="mx-auto text-3xl font-bold">Sign in</div>
+                <div className="overflow-hidden errordiv"></div>
 
-                    <div className="my-2"></div>
-                    <div className="text-sm text-center">
-                        Don't have an account? <a className="special-link" onClick={e => { e.preventDefault(); navigate('/auth/register'); }}>Register</a>
+                <div className="relative w-full">
+                    <ErrorDiv error={error} />
+                </div>
+                <div class="relative w-full">
+                    <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none"><i class="fi fi-rr-envelope"></i></div>
+                    <input type="text" name="email" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Email" required />
+                </div>
+
+                <div class="relative w-full">
+                    <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                        <i class="fi fi-rr-key"></i>
                     </div>
+                    <button type="button" class="absolute inset-y-0 end-0 flex items-center pe-3 peer">
+                        <label class="cursor-pointer">
+                            <input type="checkbox" class="peer hidden" onChange={e => { document.querySelector('input[name="password"]').type = e.target.checked ? "text" : "password" }} />
+                            <i className="fi fi-rr-eye peer-checked:hidden"></i>
+                            <i className="hidden fi fi-rr-eye-crossed peer-checked:flex"></i>
+                        </label>
+                    </button>
+                    <input type="password" name="password" class=" bg-gray-50 peer-has-[:checked]:bg-red-500 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Password" required />
+                </div>
+
+
+                <button disabled={loadings.login} class="disabled:opacity-50 disabled:pointer-events-none w-full relative inline-flex items-center justify-center p-0.5 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800"
+                    onClick={login} >
+                    <span class="h-10 w-full relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-opacity-0 grid place-items-center">
+                        {loadings.login ? (
+                            <div role="status" className="h-full">
+                                <svg aria-hidden="true" class="h-full aspect-square text-gray-200 animate-spin dark:text-gray-600 fill-blue-600" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor" /><path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentFill" /></svg>
+                            </div>
+                        ) : 'Login'}
+                    </span>
+                </button>
+                <div className="text-sm text-center">
+                    Don't have an account? <a className="special-link" onClick={e => { e.preventDefault(); navigate('/auth/register'); }}>Register</a>
                 </div>
             </div>
         );
@@ -158,12 +221,13 @@
 
         async function register(e) {
             e.preventDefault();
+            setLoadings({ ...loadings, register: true });
+            setError(null);
             let email = document.querySelector('input[name="email"]').value;
             let password = document.querySelector('input[name="password"]').value;
             let username = document.querySelector('input[name="username"]').value || email.split('@')[0];
 
             try {
-
                 await pb.collection('users').create({ username: username, email: email, password: password, passwordConfirm: password });
                 const user = await pb.collection('users').authWithPassword(email, password);
                 // pb.authStore.save(user.token, user.record);
@@ -172,43 +236,70 @@
             } catch (error) {
                 console.log(error)
                 console.log(error?.data || 'Unknown error');
+                setError(error?.data?.message || 'Unknown error');
             }
-        }
-        return (
-            <div className="flex flex-col">
+            setLoadings({ ...loadings, register: false });
 
-                <div className="bg-base-200 w-full max-w-[200px] flex items-center justify-center rounded-full aspect-square mx-auto shadow">
+        }
+
+        let [loadings, setLoadings] = useState({});
+
+        let [error, setError] = useState(null);
+
+        return (
+            <div className="flex flex-col w-full max-w-sm gap-4 mx-auto ">
+
+                <div className="bg-base-200 w-full max-w-[200px] flex items-center justify-center rounded-full aspect-square mx-auto shadow border">
                     <i class="text-8xl fi fi-rr-user"></i>
                 </div>
-                <div className="my-2"></div>
-                <div className="text-3xl font-bold mx-auto">Sign in</div>
-                <div className="my-2"></div>
-                <div className="max-w-sm flex flex-col gap-2 mx-auto">
-                    <label class="input input-bordered flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 opacity-70"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM12.735 14c.618 0 1.093-.561.872-1.139a6.002 6.002 0 0 0-11.215 0c-.22.578.254 1.139.872 1.139h9.47Z" /></svg>
-                        <input type="text" name="username" class="grow" placeholder="Username" />
-                    </label>
-                    <label class="input input-bordered flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 opacity-70"><path d="M2.5 3A1.5 1.5 0 0 0 1 4.5v.793c.026.009.051.02.076.032L7.674 8.51c.206.1.446.1.652 0l6.598-3.185A.755.755 0 0 1 15 5.293V4.5A1.5 1.5 0 0 0 13.5 3h-11Z" /><path d="M15 6.954 8.978 9.86a2.25 2.25 0 0 1-1.956 0L1 6.954V11.5A1.5 1.5 0 0 0 2.5 13h11a1.5 1.5 0 0 0 1.5-1.5V6.954Z" /></svg>
-                        <input type="text" name="email" class="grow" placeholder="Email" />
-                    </label>
-                    <label class="input input-bordered flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 opacity-70"><path fill-rule="evenodd" d="M14 6a4 4 0 0 1-4.899 3.899l-1.955 1.955a.5.5 0 0 1-.353.146H5v1.5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-2.293a.5.5 0 0 1 .146-.353l3.955-3.955A4 4 0 1 1 14 6Zm-4-2a.75.75 0 0 0 0 1.5.5.5 0 0 1 .5.5.75.75 0 0 0 1.5 0 2 2 0 0 0-2-2Z" clip-rule="evenodd" /></svg>
-                        <input type="password" name="password" class="grow" placeholder="Password" />
-                    </label>
-                    <button class="btn btn-primary w-full" onClick={register}>Register</button>
-
-                    <div className="my-2"></div>
-                    <div className="text-sm text-center">
-                        Already have an account? <a className="special-link" onClick={e => { e.preventDefault(); navigate('/auth/login'); }}>Login</a>
-                    </div>
+                <div className="mx-auto text-3xl font-bold">Register</div>
+                <div className="relative w-full">
+                    <ErrorDiv error={error} />
                 </div>
-            </div>
+                <div class="relative w-full">
+                    <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none"><i class="fi fi-rr-envelope"></i></div>
+                    <input type="text" name="username" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Username" required />
+                </div>
+                <div class="relative w-full">
+                    <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none"><i class="fi fi-rr-envelope"></i></div>
+                    <input type="text" name="email" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Email" required />
+                </div>
+                <div class="relative w-full">
+                    <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                        <i class="fi fi-rr-key"></i>
+                    </div>
+                    <button type="button" class="absolute inset-y-0 end-0 flex items-center pe-3 peer">
+                        <label class="cursor-pointer">
+                            <input type="checkbox" class="peer hidden" onChange={e => { document.querySelector('input[name="password"]').type = e.target.checked ? "text" : "password" }} />
+                            <i className="fi fi-rr-eye peer-checked:hidden"></i>
+                            <i className="hidden fi fi-rr-eye-crossed peer-checked:flex"></i>
+                        </label>
+                    </button>
+                    <input type="password" name="password" class=" bg-gray-50 peer-has-[:checked]:bg-red-500 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Password" required />
+                </div>
+
+
+
+                <button disabled={loadings.register} class="disabled:opacity-50 disabled:pointer-events-none w-full relative inline-flex items-center justify-center p-0.5 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800"
+                    onClick={register} >
+                    <span class="h-10 w-full relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-opacity-0 grid place-items-center">
+                        {loadings.register ? (
+                            <div role="status" className="h-full">
+                                <svg aria-hidden="true" class="h-full aspect-square text-gray-200 animate-spin dark:text-gray-600 fill-blue-600" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor" /><path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentFill" /></svg>
+                            </div>
+                        ) : 'Register'}
+                    </span>
+                </button>
+
+                <div className="text-sm text-center">
+                    Already have an account? <a className="special-link" onClick={e => { e.preventDefault(); navigate('/auth/login'); }}>Login</a>
+                </div>
+            </div >
         );
     }
     function Content() {
         return (
-            <div className="flex justify-center items-center h-full w-full px-4 border">
+            <div className="flex items-center justify-center w-full h-full px-4 border">
 
             </div>
         )
@@ -223,7 +314,7 @@
 
     function Layout() {
         return (
-            <div className="flex flex-col h-screen w-screen border bg-neutral-100 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 ">
+            <div className="flex flex-col w-screen h-screen border bg-neutral-100 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 ">
                 <TopBar />
                 <div className="flex flex-1">
                     <SideBar />

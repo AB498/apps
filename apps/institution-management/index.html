@@ -7,6 +7,8 @@
     <title>Document</title>
 
 
+    <script src="https://cdn.jsdelivr.net/npm/preline@2.3.0/dist/preline.min.js"></script>
+
     <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
@@ -29,9 +31,8 @@
 
 
 <body>
+
     <div id="root"></div>
-
-
 
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -218,6 +219,10 @@
 
         setTheme(localStorage.getItem('color-theme') === 'dark' ? 'dark' : 'light');
 
+        function log(...args) {
+            console.log(...args);
+            return args[0];
+        }
     </script>
 
     <!-- <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script> -->
