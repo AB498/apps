@@ -36,7 +36,7 @@ if (false && fs.existsSync(privateKey) && fs.existsSync(certificate)) {
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.send('Hello World!');
 });
 
 
