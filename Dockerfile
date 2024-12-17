@@ -20,10 +20,10 @@ RUN npm install
 COPY . .
 
 # Change ownership of the working directory to the non-root user
-RUN chown -R appuser:appgroup /usr/src/app
+RUN chown -R 10001:10001 /usr/src/app
 
-# Switch to the non-root user
-USER appuser
+# Switch to the non-root user using UID
+USER 10001
 
 # Expose the app port
 EXPOSE 8080
