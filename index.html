@@ -46,7 +46,7 @@
                 <div class="text-xl font-extrabold">Apps</div>
                 <div class="my-2"></div>
                 <div class="flex flex-col gap-2 p-2">
-                    {apps.map(app => <div class="rounded shadow border p-2 hover:bg-gray-200 dark:hover:bg-gray-700" onClick={() => window.location.href = `${serverBaseName}/apps/${app}`}>{app}</div>)}
+                    {apps.map(app => <div class="rounded shadow border p-2 hover:bg-gray-200 dark:hover:bg-gray-700" onClick={() => window.location.href = `${serverBaseName}/apps/${app}/`}>{app}</div>)}
                 </div>
             </div>
         }
