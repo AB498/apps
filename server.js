@@ -64,7 +64,7 @@ for (let appname of appnames) {
             target: 'http://localhost:' + prt,
             changeOrigin: true,
             pathRewrite: {
-                [`${serverBaseName}/apps/${appname}`]: '' //remove /service/api
+                [`^${serverBaseName}/apps/${appname}`]: '' //remove /service/api
             }
         }),
     );
