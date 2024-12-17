@@ -1,3 +1,4 @@
+# Use the official Node.js image
 FROM node:20
 
 # Install Git
@@ -8,22 +9,21 @@ RUN apt-get update && apt-get install -y git \
 RUN groupadd -g 10001 appgroup && \
     useradd -m -u 10001 -g appgroup appuser
 
-# Use a writable directory as the working directory
-USER root
-WORKDIR /tmp/app
+# Set the working directory
+WORKDIR /usr/src/app
 
-# Copy files and set permissions
-COPY . .
-RUN chown -R 10001:10001 /tmp/app
-
-# Move .git to a writable directory
-RUN mkdir /tmp/git && cp -r .git /tmp/git
-ENV GIT_DIR=/tmp/git
-
-USER 10001
-
-# Install dependencies
+# Copy package files and install dependencies
+COPY package.json package-lock.json ./
 RUN npm install
+
+# Copy the rest of the application code
+COPY . .
+
+# Change ownership of the working directory to the non-root user
+RUN chown -R 10001:10001 /usr/src/app
+
+# Switch to the non-root user using UID
+USER 10001
 
 # Expose the app port
 EXPOSE 8080

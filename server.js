@@ -37,7 +37,7 @@ if (false && fs.existsSync(privateKey) && fs.existsSync(certificate)) {
 app.use(express.static(path.join(__dirname, 'static')));
 
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.send('Hello World!');
 });
 
 
@@ -86,7 +86,7 @@ setInterval(async () => {
     gitProcess.cancel = null;
 
 
-    console.log(error, stdout, stderr);
+    // console.log(error, stdout, stderr);
 }, 5000);
 
 function exec(cmd) {
