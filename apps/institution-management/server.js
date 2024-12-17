@@ -8,4 +8,8 @@ app.use('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+app.get('/specific', (req, res) => {
+    res.send('Specific');
+});
+
 module.exports = app;
