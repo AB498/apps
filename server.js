@@ -43,7 +43,7 @@ app.get('/', (req, res) => {
 
 let appnames = ['finance-tracker', 'institution-management'];
 let serverBaseName = '/web/backend/v1.0';
-app.get(`${serverBaseName}/apps/:appname`, (req, res, next) => {
+app.get(`/apps/:appname`, (req, res, next) => {
     // console.log(req.url.split('/'));
     if (appnames.includes(req.params.appname))
         return res.redirect(req.url + '/');
@@ -63,9 +63,6 @@ for (let appname of appnames) {
         createProxyMiddleware({
             target: 'http://localhost:' + prt,
             changeOrigin: true,
-            pathRewrite: {
-                [`^${serverBaseName}/apps/${appname}`]: '' //remove /service/api
-            }
         }),
     );
 }
