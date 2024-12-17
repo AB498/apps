@@ -33,7 +33,7 @@ if (false && fs.existsSync(privateKey) && fs.existsSync(certificate)) {
     port = 8080;
 }
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'static')));
 
 app.get('/', (req, res) => {
     res.send('Hello World!');
