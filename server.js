@@ -37,7 +37,7 @@ app.use(express.static(path.join(__dirname, 'static')));
 
 app.get('/', (req, res) => {
     res.send('Hello World!');
-    
+
 });
 
 
@@ -63,6 +63,10 @@ for (let appname of appnames) {
         createProxyMiddleware({
             target: 'http://localhost:' + prt,
             changeOrigin: true,
+            pathRewrite: (path, req) => {
+                // Remove serverBaseName and /apps/appname from the path before forwarding
+                return path.replace(`${serverBaseName}`, '');
+            },
         }),
     );
 }
