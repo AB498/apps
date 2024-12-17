@@ -1,4 +1,5 @@
 // npm i -g nodemon express http-proxy-middleware dotenv
+let serverBaseName = '/web/backend/v1.0';
 
 require('dotenv').config();
 let port = 8080;
@@ -41,7 +42,6 @@ app.get('/', (req, res) => {
 
 
 let appnames = ['finance-tracker', 'institution-management'];
-let serverBaseName = '/web/backend/v1.0';
 // app.get(`/apps/:appname`, (req, res, next) => {
 //     // console.log(req.url.split('/'));
 //     if (appnames.includes(req.params.appname))
