@@ -30,7 +30,7 @@ if (fs.existsSync(privateKey) && fs.existsSync(certificate)) {
 } else {
     server = http.createServer(app);
     protocol = 'http';
-    port = 80;
+    port = 8080;
 }
 
 app.use(express.static(path.join(__dirname, 'public')));
