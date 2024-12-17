@@ -13,16 +13,15 @@ RUN groupadd -g 10001 appgroup && \
 WORKDIR /usr/src/app
 
 # Copy package files and install dependencies
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json ./ 
 RUN npm install
 
 # Copy the rest of the application code
 COPY . .
 
-# Change ownership of the working directory to the non-root user
+# Fix ownership of all files, including .git
+USER root
 RUN chown -R 10001:10001 /usr/src/app
-
-# Switch to the non-root user using UID
 USER 10001
 
 # Expose the app port
