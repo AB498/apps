@@ -6,8 +6,8 @@ RUN apt-get update && apt-get install -y git \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user and group
-RUN groupadd -g 1001 appgroup && \
-    useradd -m -u 1001 -g appgroup appuser
+RUN groupadd -g 10001 appgroup && \
+    useradd -m -u 10001 -g appgroup appuser
 
 # Set the working directory
 WORKDIR /usr/src/app
