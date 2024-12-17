@@ -66,6 +66,8 @@ for (let appname of appnames) {
         }),
     );
 }
+// fallback if no route matches
+app.use((req, res) => res.status(404).send('Not Found ' + req.url));
 server.listen(port, () => {
     console.log(`Server running on ${protocol}://localhost:${port}`);
 });
