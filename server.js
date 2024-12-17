@@ -59,7 +59,7 @@ for (let appname of appnames) {
     app1.listen(prt, () => {
         console.log(`App: ${appname} running on http://localhost:${prt}`);
     });
-    app.use(`${serverBaseName}/apps/` + appname,
+    app.use(`/apps/` + appname,
         createProxyMiddleware({
             target: 'http://localhost:' + prt,
             changeOrigin: true,
