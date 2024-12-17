@@ -1,24 +1,32 @@
-# Use the official Node.js image as the base image
+# Use the official Node.js image
 FROM node:20
 
 # Install Git
 RUN apt-get update && apt-get install -y git \
     && rm -rf /var/lib/apt/lists/*
 
-# Set the working directory inside the container
+# Create a non-root user and group
+RUN groupadd -g 1001 appgroup && \
+    useradd -m -u 1001 -g appgroup appuser
+
+# Set the working directory
 WORKDIR /usr/src/app
 
-# Copy package files to install dependencies
+# Copy package files and install dependencies
 COPY package.json package-lock.json ./
-
-# Install Node.js dependencies
 RUN npm install
 
-# Copy the rest of the project files
+# Copy the rest of the application code
 COPY . .
 
-# Expose the port the app runs on (adjust if different)
+# Change ownership of the working directory to the non-root user
+RUN chown -R appuser:appgroup /usr/src/app
+
+# Switch to the non-root user
+USER appuser
+
+# Expose the app port
 EXPOSE 8080
 
-# Start the application using nodemon if nodemon.json exists
+# Start the application
 CMD ["npx", "nodemon"]
