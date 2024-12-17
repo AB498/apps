@@ -41,7 +41,7 @@ app.get('/', (req, res) => {
 });
 
 
-let appnames = ['finance-tracker', 'institution-management'];
+let appnames = fs.readdirSync(path.join(__dirname, 'apps'));
 // app.get(`/apps/:appname`, (req, res, next) => {
 //     // console.log(req.url.split('/'));
 //     if (appnames.includes(req.params.appname))
