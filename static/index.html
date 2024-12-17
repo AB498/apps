@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prompt Generator</title>
+  <style>
+    body {
+      text-align: center;
+      background-color: whitesmoke;
+    }
+
+    #phrase {
+      padding: 15px;
+      width: 20%;
+      border: 5px solid rgb(49, 47, 68);
+      text-align: center;
+    }
+
+    #prompt-holder {
+      width: 50%;
+      height: 50%;
+      margin: 0 auto;
+      border: 5px solid rgb(50, 31, 221);
+      padding: 20px;
+      text-align: center;
+      background-color: rgb(246, 247, 248)
+    }
+  </style>
+</head>
+
+<body>
+  <div id="container"></div>
+  <h3><strong>AI Text-To-Image Prompt Generator</strong></h3>
+  <br><br>
+  <div id="text-input"><input type="text" title="Starting Phrase" id="phrase" placeholder="Enter phrase here"></div>
+  <br><br><br><br>
+  <button id="run"><strong>Generate Prompt</strong></button>
+  <br><br><br><br><br>
+  <div id="prompt-holder">
+    <img src="" alt="">
+  </div>
+</body>
+
+<script src="https://unpkg.com/konva@9/konva.min.js"></script>
+
+<!-- add styles -->
+<link href="https://unpkg.com/@blueprintjs/core@5/lib/css/blueprint.css" rel="stylesheet" />
+<!-- add polotno bundle -->
+<!-- (!) important: make sure it is added into body of document (not <head>) -->
+<script src="https://unpkg.com/polotno@2/polotno.bundle.js"></script>
+
+<!-- set styles for the editor -->
+<style>
+  body {
+    padding: 0;
+    margin: 0;
+  }
+
+</style>
+
+<!-- create container for editor -->
+<!-- <div id="container"></div> -->
+<!-- init the editor -->
+<script>
+  // const { store } = createPolotnoApp({
+  //   container: document.getElementById('container'),
+  // });
+  // you can use full store API available here: https://polotno.com/docs/store-overview
+</script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@gradio/client@1.8.0/dist/index.min.js"></script>
+<script type="module">
+  import * as gradioclient from "https://cdn.jsdelivr.net/npm/@gradio/client@1.8.0/dist/index.min.js";
+  window.gradioclient = gradioclient;
+  let { client: Client, handle_file } = gradioclient;
+  window.Client = Client;
+  window.Konva = Konva;
+  const inputText = document.getElementById("phrase");
+  const generate = document.getElementById("run");
+  const prompt_holder = document.getElementById("prompt-holder");
+
+
+  async function downloadImageBlob(url) { return await fetch(url).then((r) => r.blob()); }
+  try {
+
+    let textInput = inputText.value;
+    let imgPath = "https://raw.githubusercontent.com/gradio-app/gradio/main/test/test_files/bus.png";
+    let exampleImage = await downloadImageBlob(imgPath);
+    // let client = await Client("ECCV2022/dis-background-removal");
+    // let result = await client.predict("/predict", {
+    //   image: exampleImage,
+    // });
+    // document.querySelector("img").src = result.data[0].url;
+    // let maskUrl = result.data[0].url;
+    // let mask = await downloadImageBlob(maskUrl);
+    // console.log(result.data);
+
+    let client = await Client("black-forest-labs/FLUX.1-Fill-dev", { hf_token: "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" });
+    let result = await client.predict("/infer", {
+      edit_images: { "background": exampleImage, "layers": [exampleImage], "composite": null },
+      prompt: "Hello!!",
+      seed: 0,
+      randomize_seed: true,
+      width: 256,
+      height: 256,
+      guidance_scale: 1,
+      num_inference_steps: 1,
+    });
+
+    console.log(result.data);
+
+  } catch (error) {
+    console.log("Error:", error);
+  }
+</script>
+
+</html>

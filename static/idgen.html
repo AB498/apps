@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://evanw.github.io/glfx.js/glfx.js"></script>
+</head>
+
+<body>
+    <script src="perspective.min.js"></script>
+    <script src="utils.js"></script>
+
+    <div class="font-semibold text-xl">Input </div>
+    <canvas id="c" style="border:1px solid #ccc"></canvas>
+
+
+
+    <div class="font-semibold text-xl">Output </div>
+    <img id="img" class="border-4 flex" />
+
+
+    <div class="font-semibold text-xl">Perspective Canvas </div>
+    <canvas id="canvas2" width="500" height="400" style="border:1px solid #ccc"></canvas>
+
+    <!-- <img id="image" src="bg.png" class="" alt=""> -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"
+        integrity="sha512-CeIsOAsgJnmevfCi2C7Zsyy6bQKi43utIjdA87Q0ZY84oDqnI0uwfM9+bKiIkI75lUeI00WG/+uJzOmuHlesMA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+
+    <script>
+
+
+
+        var canvas = new fabric.Canvas('c');
+        canvas.setDimensions({ width: window.innerWidth, height: window.innerWidth * 0.5625 });
+        let [w, h] = [canvas.width, canvas.height];
+
+
+
+
+        function drawPerspective(imageData, transf) {
+            return new Promise(async (resolve, reject) => {
+
+                var image = new Image();
+                image.onload = function () {
+                    // var perspectiveCanvas = document.getElementById("canvas2");
+                    var perspectiveCanvas = document.createElement("canvas");
+
+                    let persp = [
+                        [0, 0],
+                        [imageData.width, 0],
+                        [imageData.width, imageData.height],
+                        [0, imageData.height]
+                    ]
+
+
+                    persp = persp.map((p, i) => {
+                        return p.map((v, j) => {
+                            return v + transf[i][j];
+                        })
+                    })
+                    perspectiveCanvas.height = Math.max(persp[2][1], persp[3][1]);
+                    perspectiveCanvas.width = imageData.width;
+                    var ctx = perspectiveCanvas.getContext("2d");
+                    var p = new Perspective(perspectiveCanvas.getContext("2d"), image);
+                    p.draw(persp);
+
+                    // const fxcanvas = fx.canvas();
+                    // console.log(fxcanvas.texture(image));
+                    // fxcanvas.draw(fxcanvas.texture(image));
+                    // fxcanvas.classList.add('border-4', 'border-red-500');
+                    // fxcanvas.perspective([0, 0, fxcanvas.width, 0, fxcanvas.width, fxcanvas.height, 0, fxcanvas.height], [0, 0, fxcanvas.width, 0, fxcanvas.width, fxcanvas.height, 0, fxcanvas.height]);
+                    // fxcanvas.update();
+                    // document.body.appendChild(fxcanvas);
+
+
+                    // const img = new Image();
+                    // img.src = main_canvas.toDataURL('image/png');
+                    // ctx.drawImage(img, 0, 0, 600, 400);
+
+                    // perspectiveCtx.putImageData(imageData, 0, 0);
+                    // perspectiveCanvas.renderAll();
+                    resolve(ctx.getImageData(0, 0, perspectiveCanvas.width, perspectiveCanvas.height));
+                }
+
+                image.src = URL.createObjectURL(
+                    await ImageDataToBlob(imageData)
+                );
+            });
+
+        };
+        var perspectiveCanvas = document.getElementById("canvas2");
+        var perspectiveCtx = perspectiveCanvas.getContext("2d");
+        function drawImageFromUrl(url) {
+            return new Promise(async (resolve, reject) => {
+
+                var image = new Image();
+                image.width = w;
+                image.height = h;
+
+                image.onload = function () {
+                    var ctx = perspectiveCanvas.getContext("2d");
+
+                    ctx.drawImage(image, 0, 0, w, h);
+
+                    let imageData = new ImageData(uint8Array, w, h);
+                    perspectiveCanvas.getContext("2d").putImageData(imageData, 0, 0);
+                    // perspectiveCanvas.renderAll();
+                    resolve(imageData.data);
+                }
+                image.src = URL.createObjectURL(
+                    await ImageDataToBlob(imageData)
+                );
+            });
+        }
+        function drawImage(imageData) {
+            return new Promise(async (resolve, reject) => {
+                var image = new Image();
+                image.width = w;
+                image.height = h;
+
+                image.onload = function () {
+                    var ctx = perspectiveCanvas.getContext("2d");
+
+                    ctx.putImageData(imageData, 0, 0);
+
+                    perspectiveCanvas.getContext("2d").putImageData(imageData, 0, 0);
+                    // perspectiveCanvas.renderAll();
+                    resolve(imageData.data);
+                }
+                image.src = URL.createObjectURL(
+                    await ImageDataToBlob(imageData)
+                );
+            });
+        }
+        function drawImageFromUrl(url) {
+            return new Promise(async (resolve, reject) => {
+
+                var image = new Image();
+                image.width = w;
+                image.height = h;
+
+                image.onload = function () {
+                    var ctx = perspectiveCanvas.getContext("2d");
+
+                    ctx.drawImage(image, 0, 0, w, h);
+
+                    let imageData = new ImageData(uint8Array, w, h);
+                    perspectiveCanvas.getContext("2d").putImageData(imageData, 0, 0);
+                    perspectiveCanvas.renderAll();
+                    resolve(imageData.data);
+                }
+                image.src = URL.createObjectURL(
+                    await ImageDataToBlob(imageData)
+                );
+            });
+        }
+
+        function drawText(text) {
+            var text_size = 50;
+
+            let textCanvas = document.createElement("canvas");
+            textCanvas.style.border = "1px solid blue ";
+            textCanvas.width = 700;
+            textCanvas.height = text_size;
+            let textCtx = textCanvas.getContext("2d");
+            // textCanvas.height = 100;
+            textCtx.lineWidth = 4;
+            textCtx.strokeStyle = "#000000";
+            textCtx.fillStyle = "#abc";
+
+
+            var rectHeight = text_size;
+            var rectWidth = 530;
+
+            var rectX = 0;
+            var rectY = 0;
+
+            let rect = [rectX, rectY, rectWidth, rectHeight];
+
+            var text_font = "Arial";
+            var the_text = "Attack of the clones!";
+            textCtx.font = text_size + "px " + text_font;
+            var textMetrics = textCtx.measureText(the_text);
+            var actualHeight = textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent;
+            var actualWidth = textMetrics.actualBoundingBoxLeft + textMetrics.actualBoundingBoxRight;
+            var text_ratio = 1.1;
+            // while (actualWidth * text_ratio > rectWidth || actualHeight * text_ratio > rectHeight) {
+            //     if (actualWidth * text_ratio > rectWidth) {
+            //         rectWidth++;
+            //     }
+
+
+            //     text_size = text_size - 1;
+            //     textCtx.font = text_size + "px " + text_font;
+            //     textMetrics = textCtx.measureText(the_text);
+            //     actualHeight = textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent;
+            //     actualWidth = textMetrics.actualBoundingBoxLeft + textMetrics.actualBoundingBoxRight;
+            // }
+
+
+            // roundRect(textCtx, rectX, rectY, actualWidth, actualHeight, 0,);
+
+            textCtx.textAlign = "center";
+            textCtx.textBaseline = "middle";
+            textCtx.fillStyle = "#000000";
+
+            document.body.appendChild(textCanvas);
+            // textCanvas.width = actualWidth ;
+            textCtx.fillText(the_text, rectX + (actualWidth / 2), rectY + (actualHeight / 2));
+
+
+
+            return textCtx.getImageData(0, 0, textCanvas.width, textCanvas.height);
+        }
+
+        // perspectiveCtx.putImageData(drawText('text'), 0, 0, 0, 0, w, h);
+
+
+
+
+        // Create text object for coordinates
+        var coordsText = new fabric.Text('', {
+            fontFamily: 'Arial',
+            fontSize: 16,
+            fontWeight: 'bold',
+            fill: 'black',
+            selectable: false,
+            zIndex: 0
+        });
+
+        // Update coordinates text on mouse move
+
+
+        setInterval(() => {
+            canvas.remove(coordsText);
+            canvas.insertAt(coordsText, (canvas.getObjects().length));
+        }, 100);
+
+        document.addEventListener('keydown', function (e) {
+            if (e.ctrlKey && e.key === 'd') {
+                canvas.discardActiveObject().renderAll();
+                e.preventDefault(); // Prevent default browser behavior
+            }
+        });
+        // create a rectangle object
+        var rect = new fabric.Rect({
+            left: 100,
+            top: 100,
+            fill: 'red',
+            width: 20,
+            height: 20,
+            zIndex: 1 // Set a high zIndex value to ensure it appears on top
+        });
+
+
+
+        function addImageAsync(imageUrl) {
+            return new Promise((resolve, reject) => {
+                fabric.Image.fromURL(imageUrl, (image) => {
+                    resolve(image);
+                });
+            });
+        }
+
+        // "add" rectangle onto canvas
+        canvas.add(rect);
+
+
+        function drawRectangle(ctx, x1, y1, x2, y2, x3, y3, x4, y4) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.lineTo(x3, y3);
+            ctx.lineTo(x4, y4);
+            ctx.closePath();
+            ctx.stroke();
+        }
+
+        // Example usage
+
+
+        (async () => {
+            let imd = drawText("Hello World");
+            let actualTrf = [
+                [0, 0],
+                [imd.width, 0],
+                [imd.width, imd.height],
+                [0, imd.height],
+            ]
+            let transform = [
+                [20, 0],
+                [0, 0],
+                [0, 0],
+                [0, 300],
+            ];
+
+            console.log(actualTrf);
+            let persData = await drawPerspective(imd, transform)
+            console.log(await drawImage(persData));
+            drawRectangle(perspectiveCtx, ...actualTrf.reduce((a, b) => a.concat(b.reduce((a, b) => a.concat(b), [])), []));
+            actualTrf = actualTrf.map((p, i) => {
+                return p.map((v, j) => {
+                    return v + transform[i][j];
+                })
+            });
+            let afterTransform = actualTrf;
+            drawRectangle(perspectiveCtx, ...actualTrf.reduce((a, b) => a.concat(b.reduce((a, b) => a.concat(b), [])), []));
+
+            debug([canvas.width, canvas.height]);
+            canvas.on('mouse:move', function (event) {
+                var pointer = canvas.getPointer(event.e);
+                var posX = pointer.x.toFixed(2);
+                var posY = pointer.y.toFixed(2);
+                coordsText.set({
+                    text: 'X: ' + (posX / w * 100).toFixed(2) + ', Y: ' + (posY / h * 100).toFixed(2),
+                    left: pointer.x + coordsText.width > w ?
+                        pointer.x - coordsText.width - 10
+                        : pointer.x + 10,
+                    top: pointer.y + coordsText.height > h ?
+                        pointer.y - coordsText.height - 10
+                        : pointer.y + 10,
+                });
+                canvas.renderAll();
+            });
+
+            let oImg = await addImageAsync('bg.png');
+            let scale = Math.min(w / oImg.width, h / oImg.height)
+            oImg.scale(scale);
+            canvas.add(oImg);
+
+
+            var points = [{
+                x: 3, y: 4
+            }, {
+                x: 16, y: 3
+            }, {
+                x: 30, y: 5
+            }, {
+                x: 25, y: 55
+            }]
+            var polygon = new fabric.Polygon(points, {
+                left: 100,
+                top: 50,
+                fill: '#D81B6000',
+                strokeWidth: 4,
+                stroke: 'green',
+                scaleX: 4,
+                scaleY: 4,
+                objectCaching: false,
+                transparentCorners: false,
+                cornerColor: 'blue',
+            });
+            // canvas.viewportTransform = [0.7, 0, 0, 0.7, -50, 50];
+            canvas.add(polygon);
+
+            function polygonPositionHandler(dim, finalMatrix, fabricObject) {
+                var x = (fabricObject.points[this.pointIndex].x - fabricObject.pathOffset.x),
+                    y = (fabricObject.points[this.pointIndex].y - fabricObject.pathOffset.y);
+                return fabric.util.transformPoint(
+                    { x: x, y: y },
+                    fabric.util.multiplyTransformMatrices(
+                        fabricObject.canvas.viewportTransform,
+                        fabricObject.calcTransformMatrix()
+                    )
+                );
+            }
+
+            function getObjectSizeWithStroke(object) {
+                var stroke = new fabric.Point(
+                    object.strokeUniform ? 1 / object.scaleX : 1,
+                    object.strokeUniform ? 1 / object.scaleY : 1
+                ).multiply(object.strokeWidth);
+                return new fabric.Point(object.width + stroke.x, object.height + stroke.y);
+            }
+            function actionHandler(eventData, transform, x, y) {
+                var polygon = transform.target,
+                    currentControl = polygon.controls[polygon.__corner],
+                    mouseLocalPosition = polygon.toLocalPoint(new fabric.Point(x, y), 'center', 'center'),
+                    polygonBaseSize = getObjectSizeWithStroke(polygon),
+                    size = polygon._getTransformedDimensions(0, 0),
+                    finalPointPosition = {
+                        x: mouseLocalPosition.x * polygonBaseSize.x / size.x + polygon.pathOffset.x,
+                        y: mouseLocalPosition.y * polygonBaseSize.y / size.y + polygon.pathOffset.y
+                    };
+                polygon.points[currentControl.pointIndex] = finalPointPosition;
+                return true;
+            }
+
+            // define a function that can keep the polygon in the same position when we change its
+            // width/height/top/left.
+            function anchorWrapper(anchorIndex, fn) {
+                return function (eventData, transform, x, y) {
+                    var fabricObject = transform.target,
+                        absolutePoint = fabric.util.transformPoint({
+                            x: (fabricObject.points[anchorIndex].x - fabricObject.pathOffset.x),
+                            y: (fabricObject.points[anchorIndex].y - fabricObject.pathOffset.y),
+                        }, fabricObject.calcTransformMatrix()),
+                        actionPerformed = fn(eventData, transform, x, y),
+                        newDim = fabricObject._setPositionDimensions({}),
+                        polygonBaseSize = getObjectSizeWithStroke(fabricObject),
+                        newX = (fabricObject.points[anchorIndex].x - fabricObject.pathOffset.x) / polygonBaseSize.x,
+                        newY = (fabricObject.points[anchorIndex].y - fabricObject.pathOffset.y) / polygonBaseSize.y;
+                    fabricObject.setPositionByOrigin(absolutePoint, newX + 0.5, newY + 0.5);
+                    return actionPerformed;
+                }
+            }
+
+            function Edit() {
+                // clone what are you copying since you
+                // may want copy and paste on different moment.
+                // and you do not want the changes happened
+                // later to reflect on the copy.
+                var poly = polygon;
+                canvas.setActiveObject(poly);
+                poly.edit = !poly.edit;
+                if (poly.edit) {
+                    var lastControl = poly.points.length - 1;
+                    poly.cornerStyle = 'circle';
+                    poly.cornerColor = 'rgba(0,0,255,0.5)';
+                    poly.controls = poly.points.reduce(function (acc, point, index) {
+                        acc['p' + index] = new fabric.Control({
+                            positionHandler: polygonPositionHandler,
+                            actionHandler: anchorWrapper(index > 0 ? index - 1 : lastControl, actionHandler),
+                            actionName: 'modifyPolygon',
+                            pointIndex: index
+                        });
+                        return acc;
+                    }, {});
+                } else {
+                    poly.cornerColor = 'blue';
+                    poly.cornerStyle = 'rect';
+                    poly.controls = fabric.Object.prototype.controls;
+                }
+                poly.hasBorders = !poly.edit;
+                canvas.requestRenderAll();
+            }
+            Edit();
+
+
+            let startCoord = [
+                [w * 10 / 100, h * 25 / 100],
+                [w * 20 / 100, h * 25 / 100],
+                [w * 20 / 100, h * 35 / 100],
+                [w * 10 / 100, h * 35 / 100],
+            ]
+            let oImg2 = await addImageAsync(URL.createObjectURL(new Blob([await ImageDataToBlob(persData)], { type: 'image/png' })));
+            oImg2.set({ left: startCoord[0][0], top: startCoord[0][1], scaleX: (startCoord[1][0] - startCoord[0][0]) / w, scaleY: (startCoord[3][1] - startCoord[0][1]) / h });
+            canvas.add(oImg2);
+
+
+            var group = new fabric.Group([oImg, oImg2], {
+            });
+            // canvas.add(group);
+
+
+            // console.log(oImg.canvas.getContext('2d').getImageData(0, 0, oImg.width, oImg.height));
+            canvas.renderAll();
+
+            // var image = document.getElementById('image');
+            // const fxcanvas = fx.canvas();
+            // console.log(fxcanvas.texture(image));
+            // fxcanvas.draw(fxcanvas.texture(image));
+            // fxcanvas.classList.add('border-4', 'border-red-500');
+
+            // fxcanvas.perspective([0, 0, fxcanvas.width, 0, fxcanvas.width, fxcanvas.height, 0, fxcanvas.height], [0, 0, oImg.width * scale, 0, oImg.width * scale, oImg.height * scale, 0, oImg.height * scale]);
+            // fxcanvas.width = w;
+            // fxcanvas.update();
+            // document.body.appendChild(fxcanvas);
+
+
+
+            // await new Promise((r) => setTimeout(r, 1000));
+            let imageData = this.canvas.contextContainer.getImageData(0, 0, canvas.width, canvas.height);
+
+            // imageData = new ImageData(arr, imageData.width);
+
+            // document.querySelector('#canvas2').getContext('2d').putImageData(imageData, 0, 0);
+
+            document.getElementById('img').width = imageData.width;
+            document.getElementById('img').height = imageData.height;
+            document.getElementById('img').src = URL.createObjectURL(
+                await ImageDataToBlob(imageData)
+            );
+
+        })();
+
+        function ImageDataToBlob(imageData) {
+            let w = imageData.width;
+            let h = imageData.height;
+            let canvas = document.createElement("canvas");
+            canvas.width = w;
+            canvas.height = h;
+            let ctx = canvas.getContext("2d");
+            ctx.putImageData(imageData, 0, 0);
+
+            return new Promise((resolve) => {
+                canvas.toBlob(resolve);
+            });
+        }
+
+
+
+    </script>
+</body>
+
+</html>

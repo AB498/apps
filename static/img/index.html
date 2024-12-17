@@ -1,0 +1,76 @@
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel='stylesheet'
+    href='https://cdn-uicons.flaticon.com/2.5.1/uicons-regular-rounded/css/uicons-regular-rounded.css'>
+
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:ital,wght@0,100..900;1,100..900&display=swap"
+    rel="stylesheet">
+
+
+<script type="text/babel" src="main.jsx"></script>
+<!-- <script src="assets/js/babel.min.js"></script> -->
+<script src="https://unpkg.com/konva@9/konva.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<style>
+    * {
+        font-family: "Work Sans", sans-serif;
+    }
+
+    .loading {
+        position: relative;
+        /* Ensures the overlay is positioned relative to this div */
+    }
+
+    .loading::before {
+        content: "";
+        /* Empty content for the pseudo-element */
+        position: absolute;
+        /* Position the overlay absolutely within the parent */
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        /* Semi-transparent white background */
+        z-index: 1000;
+        /* Ensure it appears above other elements */
+    }
+
+    .loading::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(255, 255, 255, 0.2);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        transform: translate(-50%, -50%);
+        z-index: 1001;
+    }
+
+    @keyframes spin {
+        from {
+            transform: translate(-50%, -50%) rotate(0deg);
+        }
+
+        to {
+            transform: translate(-50%, -50%) rotate(360deg);
+        }
+    }
+</style>
+
+<script type="module">
+    import * as gradioclient from "https://cdn.jsdelivr.net/npm/@gradio/client@1.8.0/dist/index.min.js";
+    window.gradioclient = gradioclient;
+</script>
+<script type="module">
+    import * as sucrase from 'https://cdn.pika.dev/sucrase';
+    window.sucrase = sucrase;
+    document.querySelectorAll('script[type="text/babel"]').forEach(async (code) => eval(sucrase.transform(code.src ? await (await fetch(code.src)).text() : code.innerHTML, { transforms: ['jsx'] }).code));
+</script>
