@@ -1,7 +1,7 @@
 // npm i -g nodemon express http-proxy-middleware dotenv
 
 require('dotenv').config();
-let port = process.env.PORT || 80;
+let port = 8080;
 
 const express = require('express');
 const http = require('http');
@@ -20,7 +20,7 @@ let protocol;
 let privateKey = '/etc/letsencrypt/live/world.ovh/privkey.pem';
 let certificate = '/etc/letsencrypt/live/world.ovh/fullchain.pem';
 
-if (fs.existsSync(privateKey) && fs.existsSync(certificate)) {
+if (false && fs.existsSync(privateKey) && fs.existsSync(certificate)) {
     server = https.createServer({
         key: fs.readFileSync(privateKey),
         cert: fs.readFileSync(certificate)
