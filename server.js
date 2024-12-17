@@ -43,12 +43,12 @@ app.get('/', (req, res) => {
 
 let appnames = ['finance-tracker', 'institution-management'];
 let serverBaseName = '/web/backend/v1.0';
-// app.get(`/apps/:appname`, (req, res, next) => {
-//     // console.log(req.url.split('/'));
-//     if (appnames.includes(req.params.appname))
-//         return res.redirect(req.url + '/');
-//     next();
-// });
+app.get(`/apps/:appname`, (req, res, next) => {
+    // console.log(req.url.split('/'));
+    if (appnames.includes(req.params.appname))
+        return res.redirect(req.url + '/');
+    next();
+});
 
 
 let tmpPort = port;
