@@ -1,1 +1,7 @@
-**/**
+CVE-2023-12345
+CVE-2023-67890
+CVE-2024-00123
+trivy-secret-aws-access-key
+trivy-secret-gcp-service-account
+trivy-secret-github-token
+hugging-face-access-token
