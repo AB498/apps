@@ -85,6 +85,7 @@
   async function downloadImageBlob(url) { return await fetch(url).then((r) => r.blob()); }
   try {
 
+
     let textInput = inputText.value;
     let imgPath = "https://raw.githubusercontent.com/gradio-app/gradio/main/test/test_files/bus.png";
     let exampleImage = await downloadImageBlob(imgPath);

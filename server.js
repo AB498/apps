@@ -70,3 +70,33 @@ app.use((req, res) => res.status(404).send('Not Found ' + req.url));
 server.listen(port, () => {
     console.log(`Server running on ${protocol}://localhost:${port}`);
 });
+
+let gitProcess = { locked: false, cancel: null };
+// periodic pull
+setInterval(async () => {
+    // cd
+    // git pull
+    if (gitProcess.locked) gitProcess.cancel();
+    gitProcess.locked = true;
+    let [result, cancel] = exec(`cd ${path.join(__dirname, 'static')} && git pull`);
+    gitProcess.cancel = cancel;
+
+    let [error, stdout, stderr] = await result;
+    gitProcess.locked = false;
+    gitProcess.cancel = null;
+
+
+    console.log(error, stdout, stderr);
+}, 5000);
+
+function exec(cmd) {
+    let resolve;
+    let process = require('child_process').exec(cmd, (error, stdout, stderr) => {
+        resolve([error, stdout, stderr]);
+    });
+    let cancel = () => process.kill('SIGKILL');
+    let promise = new Promise((r) => {
+        resolve = r;
+    });
+    return [promise, cancel];
+}
