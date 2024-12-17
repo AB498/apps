@@ -37,6 +37,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/', (req, res) => {
     res.send('Hello World!');
+    // res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 
@@ -44,6 +45,7 @@ let appnames = ['finance-tracker', 'institution-management'];
 
 app.get('/apps/:appname', (req, res, next) => {
     // console.log(req.url.split('/'));
+    return res.send('Hello World!', req.params.appname);
     if (req.url.split('/').length == 3 && appnames.includes(req.params.appname))
         return res.redirect(req.url + '/');
     next();
