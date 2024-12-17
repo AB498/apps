@@ -37,16 +37,15 @@ app.use(express.static(path.join(__dirname, 'static')));
 
 app.get('/', (req, res) => {
     res.send('Hello World!');
-    // res.sendFile(path.join(__dirname, 'index.html'));
+    
 });
 
 
 let appnames = ['finance-tracker', 'institution-management'];
-
-app.get('/apps/:appname', (req, res, next) => {
+let serverBaseName = '/web/backend/v1.0';
+app.get(`${serverBaseName}/apps/:appname`, (req, res, next) => {
     // console.log(req.url.split('/'));
-    return res.send('Hello World!', req.params.appname);
-    if (req.url.split('/').length == 3 && appnames.includes(req.params.appname))
+    if (appnames.includes(req.params.appname))
         return res.redirect(req.url + '/');
     next();
 });
@@ -60,7 +59,7 @@ for (let appname of appnames) {
     app1.listen(prt, () => {
         console.log(`App: ${appname} running on http://localhost:${prt}`);
     });
-    app.use('/apps/' + appname,
+    app.use(`${serverBaseName}/apps/` + appname,
         createProxyMiddleware({
             target: 'http://localhost:' + prt,
             changeOrigin: true,
