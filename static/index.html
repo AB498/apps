@@ -1,59 +1,1531 @@
-<!DOCTYPE html>
-<html lang="en">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
 
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Swiper/11.0.5/swiper-bundle.css"
+    integrity="sha512-pmAAV1X4Nh5jA9m+jcvwJXFQvCBi3T17aZ1KWkqXr7g/O2YMvO8rfaa5ETWDuBvRq6fbDjlw4jHL44jNTScaKg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/Swiper/11.0.5/swiper-bundle.min.js" integrity="sha512-Ysw1DcK1P+uYLqprEAzNQJP+J4hTx4t/3X2nbVwszao8wD+9afLjBQYjz7Uk4ADP+Er++mJoScI42ueGtQOzEA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-element-bundle.min.js"></script> -->
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: "class",
-            preflights: false
+<script src="https://unpkg.com/konva@9/konva.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+<link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+<script>eruda.init();</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Glide.js/3.2.0/glide.min.js"
+    integrity="sha512-IkLiryZhI6G4pnA3bBZzYCT9Ewk87U4DGEOz+TnRD3MrKqaUitt+ssHgn2X/sxoM7FxCP/ROUp6wcxjH/GcI5Q=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Glide.js/3.2.0/css/glide.core.css"
+    integrity="sha512-ShLuspGzRsTiMlQ2Rg0e+atjy/gVQr3oYKnKmQkHQ6sxcnDAEOtOaPz2rRmeygV2CtnwUawDyHkGgH4zUbP3Hw=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+
+<div id="root"></div>
+
+
+<script type="text/babel" data-type="module" type="module" live>
+
+    import * as React from "https://esm.sh/react@19.0.0?dev"
+    import * as ReactDOMClient from "https://esm.sh/react-dom@19.0.0/client?dev"
+    import * as framerMotion from 'https://esm.sh/framer-motion@11.15.0?dev';
+    import * as gradio_client from 'https://esm.sh/@gradio/client?dev';
+    import * as reactRouter from 'https://esm.sh/react-router-dom@7.0.2-pre.0?dev';
+    import * as swiperModule from 'https://esm.sh/swiper@11.1.15/react?dev';
+    import * as swiperModules from 'https://esm.sh/swiper@11.1.15/modules?dev';
+
+    const { Swiper, SwiperSlide } = swiperModule;
+    const { Grid, Pagination } = swiperModules;
+
+    const { useState, useMemo, useEffect, createContext, useContext, useRef } = React;
+    const { HashRouter, Route, Routes, Redirect, useHistory, useLocation, Link } = reactRouter;
+    const { useDragControls, useMotionValue, useAnimate, motion } = framerMotion;
+
+
+    let maxDimensions = { width: 500, height: 500 };
+
+    let modules = {
+        maxDimensions,
+        // safe, uuid, useAsync, useForceUpdate, poll, useStream, subscribeFnSync, transform,
+        // MakeComponent, getImageFromURL, getImageFromBlob, getBlobFromImage, downloadImageBlobFromUrl, cropImage, getImageFromCanvas,
+        // RealtimeComponent, AsyncComponent, StreamComponent, makeReactive, reactive, useBreakpoint, isJSONObject
+        useState, useMemo, useEffect, createContext, useContext, useRef,
+        swiperModule, Swiper, SwiperSlide, Grid, Pagination,
+        useDragControls, useMotionValue, useAnimate, motion,
+        HashRouter, Route, Routes, Redirect, useHistory, useLocation, Link,
+        React, ReactDOMClient, framerMotion, gradio_client, reactRouter,
+    };
+    Object.entries(modules).forEach(([key, val]) => window[key] = val);
+
+
+
+    let { Client } = gradio_client;
+    async function getMaskWithCompare(originalImage, alteredImage) {
+        const canvasOutput = document.createElement('canvas');
+        canvasOutput.width = originalImage.width;
+        canvasOutput.height = originalImage.height;
+        const outputCtx = canvasOutput.getContext('2d');
+
+        const canvas1 = document.createElement('canvas');
+        canvas1.width = originalImage.width;
+        canvas1.height = originalImage.height;
+        const ctx1 = canvas1.getContext('2d');
+
+        const canvas2 = document.createElement('canvas');
+        canvas2.width = originalImage.width;
+        canvas2.height = originalImage.height;
+        const ctx2 = canvas2.getContext('2d');
+
+
+        // Draw images onto the canvas
+        ctx1.drawImage(originalImage, 0, 0);
+        ctx2.drawImage(alteredImage, 0, 0);
+
+        // Extract pixel data
+        const img1Data = ctx1.getImageData(0, 0, canvas1.width, canvas1.height);
+        const img2Data = ctx2.getImageData(0, 0, canvas2.width, canvas2.height);
+
+        const maskData = outputCtx.createImageData(canvas1.width, canvas1.height);
+
+        // Compare pixels and generate the mask
+        for (let i = 0; i < img1Data.data.length; i += 4) {
+            const rDiff = Math.abs(img1Data.data[i] - img2Data.data[i]);
+            const gDiff = Math.abs(img1Data.data[i + 1] - img2Data.data[i + 1]);
+            const bDiff = Math.abs(img1Data.data[i + 2] - img2Data.data[i + 2]);
+            const aDiff = Math.abs(img1Data.data[i + 3] - img2Data.data[i + 3]);
+
+            const difference = (rDiff + gDiff + bDiff) / 3;
+
+            const value = 255 - difference;
+            maskData.data[i] = value;      // Red
+            maskData.data[i + 1] = value;  // Green
+            maskData.data[i + 2] = value;  // Blue
+            maskData.data[i + 3] = img2Data.data[i + 3];    // Alpha
+        }
+
+        // Draw the mask onto the output canvas
+        outputCtx.putImageData(maskData, 0, 0);
+
+        return await getImageFromCanvas(canvasOutput);
+    }
+
+    window.ImageAPI = {
+        async removeBg(image) {
+            let imageBlob = await getBlobFromImage(image);
+            const client = await Client.connect("https://briaai-bria-rmbg-1-4.hf.space/--replicas/t3n7v/");
+            const result = await client.predict("/predict", [
+                imageBlob, 	// blob in 'image' Image component
+            ]);
+
+            console.log(`https://briaai-bria-rmbg-1-4.hf.space/--replicas/t3n7v/file=${result.data[0].path}`);
+            let resImg = await getImageFromURL(`https://briaai-bria-rmbg-1-4.hf.space/--replicas/t3n7v/file=${result.data[0].path}`);
+            let maskImg = await getMaskWithCompare(image, resImg);
+            return [resImg, maskImg];
+        },
+        async removeBgOld(image) {
+            let client = await Client.connect("ECCV2022/dis-background-removal");
+            let result = await client.predict("/predict", {
+                image: await getBlobFromImage(image),
+            });
+
+            console.log(result.data[0].url); console.log(result.data[1].url);
+            // [removed, mask]
+            return await Promise.all([result.data[0].url, result.data[1].url].map(async (url) => await getImageFromURL(url)));
+        },
+        async aiFill(image, mask, composite, prompt) {
+            try {
+
+                let imageBlob = await getBlobFromImage(image);
+                let maskBlob = await getBlobFromImage(mask);
+                let compositeBlob = await getBlobFromImage(composite);
+                let client = await Client.connect("black-forest-labs/FLUX.1-Fill-dev", { hf_token: "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" });
+                let result = await client.predict("/infer", {
+                    edit_images: { "background": imageBlob, "layers": [maskBlob], "composite": compositeBlob },
+                    prompt: prompt,
+                    seed: 0,
+                    randomize_seed: true,
+                    width: image.width,
+                    height: image.height,
+                    guidance_scale: 30,
+                    num_inference_steps: 30,
+                });
+                return await getImageFromURL(result.data[0].url); // filled
+
+            } catch (error) {
+                console.log(error);
+                return null;
+            }
+        },
+        async bgGenerate(image, prompt, negative_prompt, num_steps, control_scale, seed) {
+            let imageBlob = await getBlobFromImage(image);
+            const app = await client("briaai/BRIA-Background-Generation");
+            const result = await app.predict("/process", [
+                imageBlob, 	// blob in 'Upload' Image component		
+                prompt, // string  in 'Prompt' Textbox component		
+                negative_prompt, // string  in 'Negative prompt' Textbox component		
+                30, // number (numeric value between 10 and 100) in 'Number of steps' Slider component		
+                0.1, // number (numeric value between 0.1 and 2.0) in 'ControlNet conditioning scale' Slider component		
+                0, // number (numeric value between 0 and 2147483647) in 'Seed' Slider component
+            ]);
+
+            console.log(result.data);
+            return result.data[0].url;
+
+        }
+
+        // async stableDiffusion(prompt = "", negative_prompt = "") {
+        //     const client = await Client("stabilityai/stable-diffusion");
+        //     const result = await client.predict("/infer", {
+        //         prompt,
+        //         negative: negative_prompt,
+        //         scale: 0,
+        //     });
+
+        //     return result.data[0];
+        // }
+        // async stableDiffusion2(prompt = "", negative_prompt = "") {
+        //     const client = await Client("stabilityai/stable-diffusion-3-medium");
+        //     const result = await client.predict("/infer", {
+        //         prompt,
+        //         negative_prompt,
+        //         seed: 0,
+        //         randomize_seed: true,
+        //         width: 256,
+        //         height: 256,
+        //         guidance_scale: 0,
+        //         num_inference_steps: 1,
+        //     });
+        //     return result.data[0];
+        // }
+    };
+
+
+    async function poll(fn, interval, timeout) {
+        let canceller;
+        let ended = false;
+        if (timeout) {
+            canceller = setTimeout(() => {
+                console.log("Timeout");
+                ended = true;
+                return;
+            }, timeout);
+        }
+        while (!ended) {
+            let res = await fn();
+            if (res) {
+                canceller && clearTimeout(canceller);
+                return res;
+            }
+            await new Promise((r) => setTimeout(r, interval || 200));
+        }
+    };
+
+
+    let APP_PREFIX = 'photo-editor';
+    let APP_ASSETS_PREFIX = 'assets';
+
+    function transform(code) {
+        return window.sucrase ?
+            window.sucrase.transform(code, { transforms: ['jsx'] }).code :
+            window.Babel.transform(code, { presets: ['react'] }).code
+    }
+
+    function join(...paths) {
+        return paths
+            .map(path => path.replace(/\/+$/, '')) // Remove trailing slashes
+            .join('/')
+            .replace(/\/+/g, '/'); // Replace multiple slashes with a single slash
+    }
+
+    function properPath(path) {
+        return join('/', APP_PREFIX, path);
+    }
+
+    function log(...args) {
+        console.log(...args)
+        return args[args.length - 1];
+    }
+
+    function uuid() {
+        return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+            var r = (Math.random() * 16) | 0,
+                v = c == "x" ? r : (r & 0x3) | 0x8;
+            return v.toString(16);
+        });
+    };
+    function safe(fn, onError) {
+        try {
+            let res = fn();
+            if (res instanceof Promise) {
+                return (async (resolve, reject) => {
+                    try {
+                        return (await res);
+                    } catch (e) {
+                        if (onError) onError(e);
+                        return null;
+                    }
+                })();
+            } else {
+                return res;
+            }
+        } catch (e) {
+            if (onError) onError(e);
+            return null;
+        }
+    }
+
+
+    function useAsync(asyncFn) {
+        let [data, setData] = useState(null);
+        let [error, setError] = useState(null);
+        useEffect(() => {
+            asyncFn().then(setData).catch(setError);
+        }, []);
+        (error && console.log('useAsync Error', error));
+        return [data, setData, error];
+    }
+    function useStream(fn, cb, cleanup) {
+        let [data, setData] = useState();
+        useEffect(() => {
+            (async () => {
+                setData((await cb()));
+                fn(async () => {
+                    setData((await cb()));
+                });
+            })();
+
+            return () => cleanup && cleanup();
+        }, []);
+        return [data, setData];
+    }
+
+    function subscribeFnSync(changableAsyncFn, asyncCallback) {
+        let oldRes = null;
+        let running = true;
+        (async () => {
+            while (running) {
+                let res = await changableAsyncFn();
+                if (oldRes != res) {
+                    oldRes = res;
+                    if (!running) break;
+                    await asyncCallback(res);
+                }
+                oldRes = res;
+                await new Promise((r) => setTimeout(r, 500));
+            }
+            // console.log('Unsubscribed');
+        })();
+        return () => { running = false };
+    }
+    function AsyncComponent(props) {
+        let { asyncFn, children, resultProcessorFn } = props || {};
+        let data = useRef(null);
+        let forceUpdate = useForceUpdate();
+        useEffect(() => {
+            asyncFn().then(
+                (res) => {
+                    data.current = resultProcessorFn ? resultProcessorFn(res, props) : res;
+                    forceUpdate();
+                }
+            )
+        }, [asyncFn, resultProcessorFn]);
+
+        return data.current ? data.current : '[ NULL ]';
+    }
+    function StreamComponent(props) {
+        let { subscriberFn, children, resultProcessorFn } = props || {};
+        let data = useRef(null);
+        let unsub = useRef(null);
+        let forceUpdate = useForceUpdate();
+        useEffect(() => {
+            if (unsub.current) unsub.current();
+            let updatedResultProcessorFn = (res) => {
+                data.current = resultProcessorFn ? resultProcessorFn(res, props) : res;
+                forceUpdate();
+            };
+            let unsubs = subscriberFn(updatedResultProcessorFn);
+            unsub.current = unsubs;
+        }, [subscriberFn, resultProcessorFn]);
+        return data.current ? data.current : '[ NULL ]';
+
+    }
+    function RealtimeComponent(props) {
+        let { path } = props;
+        let originalPath = path;
+        let fn = async () => {
+            let resp = await fetch(path);
+            if (!resp.ok) {
+                let originalPath = path;
+                path = properPath('components/404.jsx');
+                return `()=><div></div>`;
+            }
+            return (await resp.text());
         };
-    </script>
+        return (
+            <StreamComponent {...props} subscriberFn={
+                (resultProcessorFn) => subscribeFnSync(fn, resultProcessorFn)
+            } resultProcessorFn={(res, props) => {
+                try {
+                    let Comp = eval(transform(res));
+                    return <Comp {...props} uuid={uuid()} {...(path == properPath('components/404.jsx') && { children: originalPath })} />
+                } catch (error) {
+                    return <div>{error + ' ' + res}</div>
+                }
+            }} />
+        )
+    }
+    function MakeComponent({ func: Func, props, stateful = true }) {
+        if (!stateful) return <Func {...props} />;
+        let stateFullComponent = useRef(null);
+        let forceUpdate = useForceUpdate();
+        useEffect(() => {
+            stateFullComponent.current = <Func {...props} />;
+            forceUpdate();
+        }, []);
+        return stateFullComponent.current;
+    }
 
-    <!-- faltui -->
-    <link rel="stylesheet"
-        href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/flat-ui/2.3.0/js/vendor/jquery.min.js"></script>
+    function useForceUpdate() {
+        let [, set] = useState(0);
+        return () => set((i) => i + 1);
+    }
 
-    <!-- <script src="https://cdn.jsdelivr.net/npm/pocketbase@0.21.3/dist/pocketbase.umd.min.js"></script> -->
+    async function importModule(src) {
+        try {
+            let content = await (await fetch(src + '?t=' + Date.now())).text();
+            if (src.slice(-3) == ".js" || src.slice(-4) == ".jsx") return eval(transform(`${content}`));
+            if (src.slice(-3) == ".css") document.body.insertAdjacentHTML("beforeend", `<style>${content}</style>`);
+        } catch (error) {
+            console.log(src, error);
+        }
+    }
+    function isJSONObject(obj) {
+        if ([Date, RegExp, Error].some((t) => obj instanceof t) || Array.isArray(obj)) {
+            return false;
+        }
+        try {
+            JSON.stringify(obj);
+            return obj && typeof obj == "object";
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function makeReactive(obj, setter) {
+        let mutatingArrayFunctions = ["copyWithin", "fill", "pop", "push", "reverse", "shift", "sort", "splice", "unshift"];
+        let handler = {
+            get: function (target, prop) {
+                if (prop == "__isReactive") return true;
+                return target[prop];
+            },
+            set: function (target, prop, value) {
+                target[prop] = value;
+                target[prop] = makeReactive(value, setter);
+                // console.log("set", prop, value, target);
+                if (!prop.startsWith("_")) setter();
+                return true;
+            },
+        };
+        if (!isJSONObject(obj) && !Array.isArray(obj)) {
+            return obj;
+        }
+        let newObj = {};
+        if (Array.isArray(obj)) {
+            newObj = [];
+        }
+        for (const [key, value] of Object.entries(obj)) {
+            newObj[key] = makeReactive(value, setter);
+        }
+        return new Proxy(newObj, handler);
+    }
+
+    function reactive(obj) {
+        let [state, setState] = useState(obj);
+        state = makeReactive(state, () => setState(state));
+        return state;
+    };
+
+    function useBreakpoint() {
+        const [breakpoint, setBreakpoint] = useState(handleResize());
+
+        function handleResize() {
+            const width = window.innerWidth;
+            return {
+                sm: width >= 640,
+                md: width >= 768,
+                lg: width >= 1024,
+                xl: width >= 1280,
+            };
+        };
+        useEffect(() => {
+
+            let handler = () => setBreakpoint(handleResize());
+            window.addEventListener("resize", handler);
+
+            return () => window.removeEventListener("resize", handler);
+        }, []);
+
+        return breakpoint;
+    }
+
+    async function getImageFromURL(url) {
+        return await getImageFromBlob(await downloadImageBlobFromUrl(url));
+    }
+
+    async function getBlobFromImage(image) {
+        // let blob = await downloadImageBlobFromUrl(image.src);
+        // image = await getImageFromBlob(blob);
+        // return image;
+        return new Promise(async (resolve, reject) => {
+            image = await getImageFromBlob(await downloadImageBlobFromUrl(image.src));
+            let canvas = document.createElement("canvas");
+            canvas.width = image.width;
+            canvas.height = image.height;
+            let ctx = canvas.getContext("2d");
+            ctx.drawImage(image, 0, 0);
+            canvas.toBlob((blob) => {
+                resolve(blob);
+            }, "image/png");
+        })
+
+    }
+    function cropImage(image, x, y, width, height) {
+        // Assuming the function should crop a given image to a specific area
+        return new Promise((resolve, reject) => {
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(image, 0, 0, image.width, image.height, x, y, width, height);
+
+            canvas.toBlob(async (blob) => {
+                resolve(await getImageFromBlob(blob));
+            }, 'image/png');
+        });
+
+    }
+    async function getImageFromCanvas(canvas) {
+        return await getImageFromURL(canvas.toDataURL("image/png"));
+    }
+    function getImageFromBlob(blob) {
+        return new Promise((resolve, reject) => {
+            let image = new Image(); // Create a new Image object
+
+            // Handle the onload event
+            image.onload = function () {
+                resolve(image); // Resolve the Promise with the loaded Image object
+            };
+
+            // Handle errors
+            image.onerror = function () {
+                reject(new Error("Failed to load image from blob"));
+            };
+
+            // Generate a URL for the blob and set it as the image source
+            let blobURL = URL.createObjectURL(blob);
+            image.src = blobURL;
+        });
+    }
+
+    async function downloadImageBlobFromUrl(url) { return await fetch(url).then((r) => r.blob()); }
 
 
-<body>
+    function Providers({ children }) {
+        const [globalState, setGlobalState] = useState(safeParse(localStorage["state"]) || {});
+        useEffect(() => { localStorage["state"] = JSON.stringify(globalState) }, [globalState]);
+        window.globalState = globalState;
+        // let breakpoint = useBreakpoint();
+        // window.breakpoint = breakpoint;
+        return (
+            <HashRouter>
+                <StateContext.Provider value={[state]}>
+                    {children}
+                </StateContext.Provider>
+            </HashRouter>
+        );
 
-    <div id="root"></div>
+    }
 
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-router-dom/5.3.4/react-router-dom.js"></script>
 
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    function safeStringify(...args) {
+        let replacer = ((obj) => {
+            let cache = [];
+            return (key, value) => {
+                if (isFunction(value)) {
+                    return "" + value;
+                }
+                return typeof value === "object" && value !== null
+                    ? cache.includes(value)
+                        ? undefined // Duplicate reference found, discard key
+                        : cache.push(value) && value // Store value in our collection
+                    : value;
+            };
+        })();
+        return JSON.stringify(args[0], replacer, ...args.slice(2));
+    };
+    function safeParse(...args) {
+        try {
+            // Define a reviver function to handle parsing functions
+            const reviver = (key, value) => {
+                if (typeof value === "string" && value.startsWith("function")) {
+                    // If the value is a string starting with 'function', parse it back to a function
+                    const functionStr = `(${value})`;
+                    return eval(functionStr); // Using eval to convert string to function
+                }
+                return value;
+            };
 
-    <script type="text/babel" data-type="module">
-        let apps = [
-            'finance-tracker',
-            'institution-management'
-        ];
-        let serverBaseName = '';// '/web/backend/v1.0';
-        function App() {
-            return <div className="bg-white dark:bg-black text-black dark:text-white">
-                <div class="text-xl font-extrabold">Apps</div>
-                <div class="my-2"></div>
-                <div class="flex flex-col gap-2 p-2">
-                    {apps.map(app => <div class="rounded shadow border p-2 hover:bg-gray-200 dark:hover:bg-gray-700" onClick={() => window.location.href = `${serverBaseName}/apps/${app}/`}>{app}</div>)}
+            return JSON.parse(args[0], reviver);
+        } catch (e) {
+            console.error(e);
+            return null;
+        }
+    };
+
+
+    function funcType(x) {
+        return typeof x === "function" ? (x.prototype ? (Object.getOwnPropertyDescriptor(x, "prototype").writable ? "function" : "class") : x.constructor.name === "AsyncFunction" ? "async" : "arrow") : "";
+    }
+    function isFunction(x) {
+        return typeof x === "function" ? (x.prototype ? (Object.getOwnPropertyDescriptor(x, "prototype").writable ? true : false) : true) : false;
+        // return typeof x === "function" && x.prototype && Object.getOwnPropertyDescriptor(x, "prototype").writable ? true : false;
+    }
+
+    const original_console_error = console.error;
+    const SUPPRESSED_WARNINGS = [
+        "Invalid DOM property",
+        "Warning: React has detected a change in the order of Hooks",
+        "Warning: ReactDOM.render is no longer supported",
+        "Warning: `value` prop on `input` should not be null",
+        "cdn.tailwindcss.com should not be used in production",
+        "Download the React DevTools",
+        "You are using the in-browser Babel",
+        "Warning: A component is changing an uncontrolled",
+        "Warning: Invalid DOM property",
+        'Each child in a list should have a unique "key" prop',
+    ];
+
+    ["error"].forEach(
+        (method) =>
+        (console[method] = function filterWarnings(msg, ...args) {
+            try {
+                if (!SUPPRESSED_WARNINGS.some((entry) => msg.includes(entry))) {
+                    original_console_error(osg, ...args);
+                    eruda?.show()
+                }
+            } catch (e) { }
+        })
+    );
+
+    function Wrapper({ children }) {
+        return (
+            <HashRouter>
+                {children}
+            </HashRouter>
+        )
+    };
+
+    function getFileUpload() {
+        return new Promise((resolve, reject) => {
+            let fileEl = document.createElement('input');
+            fileEl.type = 'file';
+            fileEl.onchange = () => {
+                console.log(fileEl.files);
+                resolve(fileEl.files[0])
+            };
+            fileEl.click();
+        });
+    }
+    function imprintOnImage(image, image2) {
+        return new Promise(async (resolve, reject) => {
+            const canvas = document.createElement('canvas');
+            canvas.width = image.width;
+            canvas.height = image.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(image, 0, 0);
+            ctx.drawImage(image2, 0, 0);
+            resolve(await getImageFromCanvas(canvas));
+        })
+    }
+    function alterResolution(image, width, height) {
+        return new Promise(async (resolve, reject) => {
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(image, 0, 0, width, height);
+            resolve(await getImageFromCanvas(canvas));
+        })
+    }
+
+
+
+    function CustomCanvas(props) {
+        let componentRef = useRef({ step: 0, loading: false, image: props.image, strokeWidth: 50 });
+        let [componentState, setComponentState] = useState({ ...componentRef.current });
+        async function setCanvasImage(image) {
+            let layer = componentRef.current.stage.find('#main-layer')[0] || new Konva.Layer({ id: 'main-layer' });
+            if (componentRef.current.stage.find('#source-image').length) {
+                return componentRef.current.stage.find('#source-image')[0].image(image);
+            }
+            let konvaImage = new Konva.Image({ id: 'source-image', image: image, x: 0, y: 0, width: image.width, height: image.height });
+            var group = new Konva.Group({
+                id: 'source-image-group',
+                clip: { x: 0, y: 0, width: image.width, height: image.height, },
+            });
+            group.add(konvaImage);
+            layer.add(group);
+            componentRef.current.stage.add(layer);
+            let reqScale = Math.max(image.width / componentRef.current.stage.width(), image.height / componentRef.current.stage.height());
+            componentRef.current.stage.scaleX(1 / reqScale);
+            componentRef.current.stage.scaleY(1 / reqScale);
+            componentRef.current.stage.x(componentRef.current.stage.width() / 2 - (image.width / reqScale) / 2);
+            componentRef.current.stage.y(componentRef.current.stage.height() / 2 - (image.height / reqScale) / 2);
+        }
+
+
+
+        let canvasAPI = {
+            setStrokeWidth(width) {
+                componentRef.current.strokeWidth = width;
+                setComponentState({ ...componentRef.current });
+            },
+            setImage(image) {
+                componentRef.current.image = image;
+                setComponentState({ ...componentRef.current });
+                setCanvasImage(image);
+            },
+            bgRemoveTask() {
+                let cancelled = false; let cancel = () => { cancelled = true };
+                let result = (async () => {
+                    // call apis
+                    console.log('started bg removal');
+                    let start = Date.now();
+                    let [resultImage, resultMask] = await ImageAPI.removeBg(componentRef.current.image);
+                    console.log('done bg removal', Date.now() - start, 'ms');
+
+                    // set image
+                    if (cancelled) return; // do not set
+                    componentRef.current.image = resultImage;
+                    setComponentState({ ...componentRef.current });
+                    setCanvasImage(resultImage);
+                })();
+                return [result, cancel];
+            },
+            drawMaskMode() {
+                let cancelled = false; let cancel = () => { cancelled = true };
+                let result = (async () => {
+                    // get mask
+                    await enterMaskMode();
+                })();
+                return [result, cancel];
+            },
+            exitDrawMaskMode() {
+                let aiFillMaskLayer = componentRef.current.stage.find('#ai-fill-mask-layer')?.[0];
+                if (aiFillMaskLayer) {
+                    aiFillMaskLayer.destroy();
+                }
+            },
+            async getDrawnMask() {
+                let img = componentRef.current.stage.find('#ai-fill-mask-image')?.[0].image(); // type canvas
+                console.image((await getImageFromCanvas(img)).src);
+                console.image(((componentRef.current.stage.find('#source-image')?.[0].image())).src);
+                return await getImageFromCanvas(img);
+            },
+
+        }
+        props.canvasAPI.current = canvasAPI;
+        props.canvasAPI.current.componentRef = componentRef;
+        props.canvasAPI.current.setComponentState = setComponentState;
+
+        window.componentRef = componentRef;
+        let divRef = useRef(null);
+        async function initialSetup() {
+            window.divRef = divRef;
+            let canvasContainer = document.querySelector('.konva-canvas');
+            let stage = new Konva.Stage({
+                container: canvasContainer,
+                // draggable: true,
+                width: divRef.current?.offsetWidth || 500,
+                height: divRef.current?.offsetHeight || 400
+            });
+            componentRef.current.stage = stage;
+            setComponentState({ ...componentRef.current });
+            props.canvasAPI.current.stage = componentRef.current.stage;
+
+        }
+        async function enterMaskMode() {
+            let aiFillMaskLayer = componentRef.current.stage.find('#ai-fill-mask-layer')?.[0];
+            let aiFillMaskClipperGroup = componentRef.current.stage.find('#ai-fill-mask-clipper-group')?.[0];
+            if (aiFillMaskLayer) {
+                aiFillMaskLayer.destroy();
+            }
+            aiFillMaskLayer = new Konva.Layer({
+                id: 'ai-fill-mask-layer',
+                visible: true,
+                x: 0,
+                y: 0,
+                // width: componentRef.current.image.width,
+                // height: componentRef.current.image.height
+            });
+
+            if (aiFillMaskClipperGroup) {
+                aiFillMaskClipperGroup.destroy();
+            }
+            aiFillMaskClipperGroup = new Konva.Group({
+                clip: {
+                    id: 'ai-fill-mask-clipper-group',
+                    x: 0,
+                    y: 0,
+                    width: componentRef.current.image.width,
+                    height: componentRef.current.image.height
+                }
+            });
+
+            var canvas = document.createElement('canvas');
+            canvas.width = componentRef.current.image.width;
+            canvas.height = componentRef.current.image.height;
+            var context = canvas.getContext('2d');
+
+
+            var image = new Konva.Image({
+                id: 'ai-fill-mask-image',
+                image: canvas,
+                opacity: 0.5,
+                x: 0,
+                y: 0,
+                width: componentRef.current.image.width,
+                height: componentRef.current.image.height,
+            });
+
+            // aiFillMaskClipperGroup.add(new Konva.Rect({ width: componentRef.current.image.width, height: componentRef.current.image.height }));
+            // aiFillMaskClipperGroup.add(new Konva.Rect({ x: 0, y: 0, width: image.width(), height: image.height(), stroke: 'blue', strokeWidth: 20 }));
+            aiFillMaskClipperGroup.add(image);
+            aiFillMaskLayer.add(aiFillMaskClipperGroup);
+            aiFillMaskLayer.batchDraw();
+            componentRef.current.stage.add(aiFillMaskLayer);
+
+            aiFillMaskLayer.on('mouseenter', function () {
+                componentRef.current.stage.container().style.cursor = 'crosshair';
+            });
+            aiFillMaskLayer.on('mouseleave', function () {
+                componentRef.current.stage.container().style.cursor = 'default';
+            });
+
+            var isPaint = false;
+            var lastPointerPosition = null;
+            var mode = 'brush';
+
+            aiFillMaskLayer.off('mousedown touchstart mouseup touchend mousemove touchmove');
+            aiFillMaskLayer.on('mousedown touchstart', function (e) {
+                // aiFillMaskLayer.canvas.style.opacity = 0.5;
+                isPaint = true;
+                // let pos = componentRef.current.stage.getRelativePointerPosition();
+                lastPointerPosition = componentRef.current.stage.getRelativePointerPosition();
+            });
+
+            aiFillMaskLayer.on('mouseup touchend', function () {
+                isPaint = false;
+            });
+
+            // and core function - drawing
+            aiFillMaskLayer.on('mousemove touchmove', function (e) {
+                if (!isPaint) return;
+                if (!lastPointerPosition) return;
+                // prevent scrolling on touch devices
+                // e.evt.preventDefault();
+                context.globalCompositeOperation = 'source-over';
+                context.strokeStyle = '#ffffff';
+                context.lineJoin = 'round';
+                context.lineWidth = componentRef.current.strokeWidth;
+                // context.globalAlpha = 0.5;
+
+                context.beginPath();
+                context.moveTo(lastPointerPosition.x, lastPointerPosition.y);
+                let pos = componentRef.current.stage.getRelativePointerPosition();
+                context.lineTo(pos.x, pos.y);
+                context.closePath();
+                context.stroke();
+
+                lastPointerPosition = pos;
+                // redraw manually
+                aiFillMaskLayer.batchDraw();
+
+            });
+        }
+        useEffect(() => {
+            if (!divRef.current) return;
+            function outputsize() {
+                componentRef.current.stage?.height(divRef.current.offsetHeight);
+                componentRef.current.stage?.width(divRef.current.offsetWidth);
+            }
+            outputsize()
+            new ResizeObserver(outputsize).observe(divRef.current);
+
+            (async () => {
+                await initialSetup();
+                let aspect = componentRef.current.image.width / componentRef.current.image.height;
+                let scale = Math.max(componentRef.current.image.width, componentRef.current.image.height) / Math.max(maxDimensions.width, maxDimensions.height);
+                componentRef.current.image = await alterResolution(props.image, componentRef.current.image.width / scale, componentRef.current.image.height / scale)
+                setComponentState({ ...componentRef.current });
+                await setCanvasImage(componentRef.current.image);
+            })();
+        }, [divRef.current]);
+        return (
+            <div className={`relative  w-full h-full shrink-0 ${componentState.loading ? ' loading overflow-hidden ' : ''}`}
+                ref={divRef}>
+                <div className="konva-canvas w-full"></div>
+                {props.controls?.length ? <div className="controls absolute bottom-0 w-full p-2 flex items-center gap-2 overflow-auto dark:bg-neutral-800/50">
+                    {props.controls.map((control, i) => (control))}
+                </div> : null}
+            </div>
+        )
+    }
+
+    function Loader({ loading, children }) {
+        return (
+            <div className="relative w-full h-full">
+                {children}
+                {loading && <div className="absolute top-0 left-0 w-full h-full bg-black/50 flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-2">
+                        <div className="text-white">Loading</div>
+                        <div className="w-10 h-10">
+                            <BarLoader />
+                        </div>
+                    </div>
+                </div>}
+            </div>
+        );
+    };
+    const variants = {
+        initial: {
+            scaleY: 0.5,
+            opacity: 0,
+        },
+        animate: {
+            scaleY: 1,
+            opacity: 1,
+            transition: {
+                repeat: Infinity,
+                repeatType: "mirror",
+                duration: 1,
+                ease: "circIn",
+            },
+        },
+    };
+    function BarLoader() {
+        return (
+            <motion.div
+                transition={{
+                    staggerChildren: 0.25,
+                }}
+                initial="initial"
+                animate="animate"
+                className="flex gap-1"
+            >
+                <motion.div variants={variants} className="h-12 w-2 bg-white" />
+                <motion.div variants={variants} className="h-12 w-2 bg-white" />
+                <motion.div variants={variants} className="h-12 w-2 bg-white" />
+                <motion.div variants={variants} className="h-12 w-2 bg-white" />
+                <motion.div variants={variants} className="h-12 w-2 bg-white" />
+            </motion.div>
+        );
+    };
+    function EditPage() {
+        let ProcessState = {
+            START: 'START',
+            PICK_IMAGE: 'PICK_IMAGE',
+            EDIT: 'EDIT',
+            BACKGROUD_REMOVE: 'BACKGROUD_REMOVE',
+            AI_FILL: 'AI_FILL',
+            DONE: 'DONE'
+        }
+        let componentRef = useRef({
+            taskState: null, processState: ProcessState.PICK_IMAGE, image: null, controls: []
+        });
+        let [componentState, setComponentState] = useState({ ...componentRef.current });
+        let canvasAPI = useRef({ current: null });
+
+        useEffect(() => {
+            if (!componentState.taskState) return;
+
+        });
+        if (componentState.processState == ProcessState.EDIT)
+            return (
+                <div className="flex flex-col items-start overflow-auto h-full">
+                    <h2 class="p-4 text-2xl font-medium text-gray-900 dark:text-white w-full flex items-center gap-4">
+                        <i className="fi-rr-arrow-left cursor-pointer rounded-full hover:bg-neutral-500 w-10 aspect-square flex items-center justify-center" onClick={() => {
+                            componentRef.current.processState = ProcessState.PICK_IMAGE;
+                            setComponentState({ ...componentRef.current });
+                        }}></i>
+                        <div>Edit</div>
+                    </h2>
+                    <div class="flex flex-col w-full h-full">
+                        <div class="grow">
+                            <Loader loading={componentRef.current.taskInfo}>
+                                <CustomCanvas image={componentRef.current.image} canvasAPI={canvasAPI} controls={componentRef.current.controls} />
+                            </Loader>
+                        </div>
+                        <DragCloseDrawer open={componentRef.current.extraControlsOpen} setOpen={(x) => { componentRef.current.extraControlsOpen = x; setComponentState({ ...componentRef.current }); }} >
+                            {componentRef.current.extraControls}
+                        </DragCloseDrawer>
+                        <div class="h-40 w-full overflow-auto p-2 flex items-center justify-center">
+                            <Swiper
+                                spaceBetween={5}
+                                slidesPerView={3}
+                                grid={{ rows: 2, columns: 3 }}
+                                modules={[Grid, Pagination]}
+                            >
+                                <SwiperSlide>
+                                    <button class="w-32 h-16 rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4"
+                                        onClick={async () => { }}>
+                                        <i className="fi-rr-template"></i>
+                                        <div className="text-xs">Template</div>
+                                    </button>
+                                </SwiperSlide>
+                                <SwiperSlide>
+                                    <button class="w-32 h-16 rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4"
+                                        onClick={async () => { }}>
+                                        <i className="fi-rr-text"></i>
+                                        <div className="text-xs">Text</div>
+                                    </button>
+                                </SwiperSlide>
+                                <SwiperSlide>
+                                    <button class="w-32 h-16 rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4"
+                                        onClick={async () => { }}>
+                                        <i className="fi-rr-filter"></i>
+                                        <div className="text-xs">Filters</div>
+                                    </button>
+                                </SwiperSlide>
+                                <SwiperSlide>
+                                    <button class="w-32 h-16 rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4"
+                                        onClick={async () => { }}>
+                                        <i className="fi-rr-telescope"></i>
+                                        <div className="text-xs">Perspective</div>
+                                    </button>
+                                </SwiperSlide>
+                                <SwiperSlide>
+                                    <button class="w-32 h-16 rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4"
+                                        onClick={async () => {
+                                            componentRef.current.extraControlsOpen = true;
+                                            componentRef.current.extraControls = (
+                                                <>  <button class="w-32 h-16 rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4"
+                                                    onClick={async () => {
+                                                        let [result, cancel] = canvasAPI.current.bgRemoveTask();
+                                                        componentRef.current.taskInfo = { result, cancel };
+                                                        setComponentState({ ...componentRef.current });
+                                                        await result;
+                                                        componentRef.current.taskInfo = null;
+                                                        setComponentState({ ...componentRef.current });
+                                                    }}>
+                                                    <i className="fi-rr-copy-image"></i>
+                                                    <div className="text-xs">AI Remove</div>
+                                                </button>
+                                                </>
+                                            );
+                                            setComponentState({ ...componentRef.current });
+                                            componentRef.current.controls = [
+                                                <i className="fi-rr-check rounded-full bg-green-500 w-10 aspect-square flex items-center justify-center cursor-pointer"
+                                                    onClick={() => {
+                                                        canvasAPI.current.exitDrawMaskMode();
+                                                        componentRef.current.extraControlsOpen = false;
+                                                        componentRef.current.controls = [];
+                                                        setComponentState({ ...componentRef.current });
+                                                    }}></i>,
+                                                <i className="fi-rr-cross rounded-full bg-red-500 w-10 aspect-square flex items-center justify-center cursor-pointer"
+                                                    onClick={() => {
+                                                        canvasAPI.current.exitDrawMaskMode();
+                                                        componentRef.current.extraControlsOpen = false;
+                                                        componentRef.current.controls = [];
+                                                        setComponentState({ ...componentRef.current });
+                                                    }}></i>,
+                                            ]
+                                            // let [result, cancel] = canvasAPI.current.bgRemoveTask();
+                                            // componentRef.current.taskInfo = { result, cancel };
+                                            // setComponentState({ ...componentRef.current });
+                                        }}>
+                                        <i className="fi-rr-copy-image"></i>
+                                        <div className="text-xs">Background Remove</div>
+                                    </button>
+                                </SwiperSlide>
+
+                                <SwiperSlide>
+                                    <button class="w-32 h-16 rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4"
+                                        onClick={async () => {
+                                            // add apply/cancel controls
+                                            canvasAPI.current.drawMaskMode();
+
+                                            componentRef.current.extraControlsOpen = true;
+                                            componentRef.current.extraControls = (
+                                                <><div class="text-lg font-bold">Stroke Width</div>
+                                                    <div class="flex gap">
+                                                        <input type="range" min="1" max="300" value={componentRef.current.strokeWidth} class="w-full" onChange={(e) => {
+                                                            canvasAPI.current.setStrokeWidth(e.target.value);
+                                                            componentRef.current.strokeWidth = e.target.value;
+                                                            setComponentState({ ...componentRef.current });
+                                                        }} />
+                                                        <div class="w-10">{canvasAPI.current?.componentRef?.current.strokeWidth}</div>
+                                                    </div></>
+                                            );
+                                            setComponentState({ ...componentRef.current });
+
+                                            componentRef.current.controls = [
+                                                <i className="fi-rr-check rounded-full bg-green-500 w-10 aspect-square flex items-center justify-center cursor-pointer"
+                                                    onClick={() => {
+                                                        canvasAPI.current.exitDrawMaskMode();
+                                                        componentRef.current.extraControlsOpen = false;
+                                                        componentRef.current.controls = [];
+                                                        setComponentState({ ...componentRef.current });
+                                                    }}></i>,
+                                                <i className="fi-rr-cross rounded-full bg-red-500 w-10 aspect-square flex items-center justify-center cursor-pointer"
+                                                    onClick={() => {
+                                                        canvasAPI.current.exitDrawMaskMode();
+                                                        componentRef.current.extraControlsOpen = false;
+                                                        componentRef.current.controls = [];
+                                                        setComponentState({ ...componentRef.current });
+                                                    }}></i>,
+                                                <input id="prompt-input" type="text" class="w-64 h-10 px-2 rounded bg-neutral-200 dark:bg-neutral-800" placehoder="Prompt" />,
+                                                <i className="fi-rr-paper-plane rounded-full bg-blue-500 w-10 aspect-square flex items-center justify-center cursor-pointer"
+                                                    onClick={async () => {
+                                                        let prompt = document.querySelector('#prompt-input').value;
+                                                        let mask = await canvasAPI.current.getDrawnMask();
+                                                        let composite = await imprintOnImage(canvasAPI.current.componentRef.current.image, mask);
+                                                        console.image(canvasAPI.current.componentRef.current.image.src, 100);
+                                                        console.image(mask.src, 100);
+                                                        console.image(composite.src, 100);
+
+                                                        componentRef.current.taskInfo = {};
+                                                        setComponentState({ ...componentRef.current });
+
+
+                                                        console.log('started ai fill');
+                                                        let start = Date.now();
+                                                        let result = await ImageAPI.aiFill(canvasAPI.current.componentRef.current.image, mask, composite, prompt);
+                                                        console.log('done ai fill', Date.now() - start, 'ms');
+
+                                                        componentRef.current.taskInfo = null;
+                                                        setComponentState({ ...componentRef.current });
+
+                                                        console.image(result?.src);
+
+                                                        if (result) canvasAPI.current.setImage(result);
+
+                                                        canvasAPI.current.exitDrawMaskMode();
+                                                        componentRef.current.controls = []
+                                                        setComponentState({ ...componentRef.current });
+
+                                                    }}
+                                                ></i>,
+                                            ]
+
+                                            setComponentState({ ...componentRef.current });
+                                        }}>
+                                        <i class="fi-rr-sparkles"></i>
+                                        <div className="text-xs">AI Fill</div>
+                                    </button>
+                                </SwiperSlide>
+                                <SwiperSlide>
+                                    <button class="w-32 h-16 rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4"
+                                        onClick={async () => { }}>
+                                        <i className="fi-rr-resize"></i>
+                                        <div className="text-xs">Crop & Resize</div>
+                                    </button>
+                                </SwiperSlide>
+                            </Swiper>
+
+                        </div>
+                    </div>
+                </div >
+            )
+
+        if (componentState.processState == ProcessState.PICK_IMAGE)
+            return (
+                <div className="h-full p-4 flex flex-col items-start overflow-auto">
+                    <h2 class="mt-4 text-2xl font-medium text-gray-900 dark:text-white text-center w-full">
+                        Pick an image
+                    </h2>
+                    <div class="mt-4 w-full relative border-2 border-gray-300 dark:border-gray-700 border-dashed rounded-lg p-4 dark:bg-neutral-800" id="dropzone">
+                        <div class="text-center" onClick={async () => {
+                            componentRef.current.image = await getImageFromURL(URL.createObjectURL(await getFileUpload()));
+                            componentRef.current.processState = ProcessState.EDIT;
+                            setComponentState({ ...componentRef.current });
+                        }} >
+                            <img class="mx-auto h-12 w-12 dark:invert" src="https://www.svgrepo.com/show/357902/image-upload.svg" alt="" />
+                            <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+                                <label for="file-upload" class="relative cursor-pointer">
+                                    <span>Drag and drop</span>
+                                    <span class="text-indigo-600 dark:text-indigo-300"> or browse </span>
+                                    <span>to upload</span>
+                                    <input id="file-upload" name="file-upload" type="file" class="sr-only" />
+                                </label>
+                            </h3>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                PNG, JPG, GIF up to 10MB
+                            </p>
+                        </div>
+                    </div>
+                    <button class="mt-4 w-full flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white dark:bg-gray-700 dark:hover:bg-gray-600 dark:focus:ring-gray-900 dark:focus:ring-2 dark:focus:ring-offset-2 dark:focus:ring-offset-gray-800 bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Upload
+                    </button>
+                    <h2 class="mt-6 text-2xl font-medium text-gray-900 dark:text-white text-center w-full">
+                        Or choose one of the examples
+                    </h2>
+                    <div className="mt-4 w-full h-96">
+
+                        <Swiper
+                            spaceBetween={5}
+                            slidesPerView={3}
+                            grid={{ rows: 2, columns: 3 }}
+                            modules={[Grid, Pagination]}
+                        >
+                            {Array.from({ length: 50 }).map((_, i) => (
+                                <SwiperSlide>
+                                    <img className="p-1 h-full aspect-video" src={`https://picsum.photos/seed/${Math.random()}/200/300`} alt=""
+                                        onClick={async (e) => {
+
+                                            componentRef.current.image = await getImageFromURL(e.target.src);
+                                            componentRef.current.processState = ProcessState.EDIT;
+                                            setComponentState({ ...componentRef.current });
+                                        }}
+                                    />
+                                </SwiperSlide>
+                            ))}
+                        </Swiper>
+
+                    </div>
+                </div>
+
+            );
+    }
+
+    console.image = function (url, height = 100) {
+        const image = new Image();
+        image.crossOrigin = 'anonymous';
+        image.onload = function () {
+            // build a data url
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.height = height || image.naturalHeight;
+            canvas.width = canvas.height * image.naturalWidth / image.naturalHeight;
+            ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL();
+            const style = [
+                'font-size: 1px;',
+                `padding: ${canvas.height}px ${canvas.width}px;`,
+                `background: url(${dataUrl}) no-repeat;`,
+                'background-size: contain;'
+            ].join(' ');
+            console.log('%c ', style);
+        };
+        image.src = url;
+    };
+
+    const DragCloseDrawerExample = () => {
+        const [open, setOpen] = useState(false);
+        return (
+            <div className="grid place-content-center bg-neutral-950">
+                <button
+                    onClick={() => setOpen(true)}
+                    className="rounded bg-indigo-500 px-4 py-2 text-white transition-colors hover:bg-indigo-600"
+                >
+                    Open drawer
+                </button>
+
+                <DragCloseDrawer open={open} setOpen={setOpen}>
+                    <div className="mx-auto max-w-md space-y-4 text-neutral-400 select-none">
+                        <h2 className="text-4xl font-bold text-neutral-200">
+                            Drag the handle at the top of this modal downwards 100px to close it
+                        </h2>
+                        <p>
+                            Lorem ipsum dolor sit, amet consectetur adipisicing elit. Minima
+                            laboriosam quos deleniti veniam est culpa quis nihil enim suscipit
+                            nulla aliquid iure optio quaerat deserunt, molestias quasi facere
+                            aut quidem reprehenderit maiores.
+                        </p>
+                        <p>
+                            Laudantium corrupti neque rerum labore tempore sapiente. Quos, nobis
+                            dolores. Esse fuga, cupiditate rerum soluta magni numquam nemo
+                            aliquid voluptate similique deserunt!
+                        </p>
+                        <p>
+                            Rerum inventore provident laboriosam quo facilis nisi voluptatem
+                            quam maxime pariatur. Velit reiciendis quasi sit magni numquam quos
+                            itaque ratione, fugit adipisci atque est, tenetur officiis explicabo
+                            id molestiae aperiam? Expedita quidem inventore magni? Doloremque
+                            architecto mollitia, dicta, fugit minima velit explicabo sapiente
+                            beatae fugiat accusamus voluptatum, error voluptatem ab asperiores
+                            quo modi possimus.
+                        </p>
+                        <p>
+                            Sit laborum molestias ex quisquam molestiae cum fugiat praesentium!
+                            Consequatur excepturi quod nemo harum laudantium accusantium nisi
+                            odio?
+                        </p>
+                        <p>
+                            Deleniti, animi maiores officiis quos eaque neque voluptas omnis
+                            quia error a dolores, pariatur ad obcaecati, vitae nisi perspiciatis
+                            fugiat sapiente accusantium. Magnam, a nihil soluta eos vero illo ab
+                            sequi, dolores culpa, quia hic?
+                        </p>
+                        <p>
+                            Eos in saepe dignissimos tempore. Laudantium cumque eius, et
+                            distinctio illum magnam molestiae doloribus. Fugiat voluptatum
+                            necessitatibus vero eligendi quae, similique non debitis qui veniam
+                            praesentium rerum labore libero architecto tempore nesciunt est
+                            atque animi voluptatibus. Aliquam repellendus provident tempora
+                            sequi officia sint voluptates eaque minima suscipit, cum maiores
+                            quos possimus. Vero ex porro asperiores voluptas voluptatibus?
+                        </p>
+                        <p>
+                            Debitis eos aut ullam odit fuga. Numquam deleniti libero quas sunt?
+                            Exercitationem earum odio aliquam necessitatibus est accusamus
+                            consequuntur nisi natus dolore libero voluptatibus odit doloribus
+                            laudantium iure, dicta placeat molestias porro quasi amet? Sint,
+                            reiciendis tenetur distinctio eaque delectus, maiores, nihil
+                            voluptas dolorem necessitatibus consequatur aliquid?
+                        </p>
+                        <p>
+                            Sunt ex, cum culpa vel odio dicta expedita omnis amet debitis
+                            inventore necessitatibus quaerat est molestias delectus. Dolorem,
+                            eius? Quae, itaque ipsa incidunt nobis repellendus, sunt dolorum
+                            aliquam ad culpa repudiandae impedit omnis, expedita illum voluptas
+                            delectus similique ducimus saepe pariatur. Molestias similique quam
+                            dolore provident doloremque maiores autem ab blanditiis voluptatum
+                            dignissimos culpa sed nesciunt laboriosam, in dicta consectetur.
+                        </p>
+                        <p>
+                            Voluptates ea, aspernatur possimus, iusto temporibus non laudantium
+                            neque molestias rem tempore eligendi earum nisi dolorum asperiores
+                            at rerum!
+                        </p>
+                        <p>
+                            Eaque totam error quia, ut eius perspiciatis unde velit temporibus
+                            mollitia. Aperiam ad tempora aliquam est molestias commodi
+                            cupiditate quos impedit nostrum accusantium quo fugit eveniet
+                            temporibus quam cumque autem porro, id ut debitis itaque et nemo
+                            exercitationem voluptatibus? Aspernatur corrupti quas iusto dolores
+                            nemo pariatur debitis quae dolorem! Nemo, eius? Dolorem quam nemo
+                            magnam ratione deserunt aperiam. Voluptatum ipsa, molestias
+                            aspernatur quas distinctio numquam qui laboriosam id ab totam
+                            commodi laborum tempora error natus vitae eligendi reiciendis
+                            maiores ex illo? Tempore at animi earum vitae enim sunt,
+                            dignissimos, mollitia corrupti officia obcaecati error iure vero
+                            repudiandae nihil magni molestias quibusdam dolorem aperiam modi.
+                            Harum, fugit.
+                        </p>
+                    </div>
+                </DragCloseDrawer>
+            </div>
+        );
+    };
+
+    function DragCloseDrawer({ open, setOpen, children }) {
+        let snapHeights = [0, 160, window.innerHeight / 2, window.innerHeight];
+        const [scope, animate] = useAnimate();
+        const drawerRef = useRef();
+        let defaultHeight = 160; // h-40
+        const y = useMotionValue(0);
+        const height = useMotionValue(defaultHeight);
+        const controls = useDragControls();
+
+        const handleClose = async () => {
+            animate(scope.current, {
+                opacity: [1, 0],
+            });
+
+            const yStart = typeof y.get() === "number" ? y.get() : 0;
+
+            await animate("#drawer", {
+                y: [yStart, drawerRef.current.offsetHeight],
+            });
+
+            setOpen(false);
+        };
+
+        let closestSnap = snapHeights.reduce((prev, curr) => Math.abs(curr - height.get()) < Math.abs(prev - height.get()) ? curr : prev);
+        if (closestSnap == 0) {
+            height.set(defaultHeight);
+        }
+        return (
+            <>
+                {open && (
+                    <motion.div
+                        ref={scope}
+                        // initial={{ opacity: 0 }}
+                        // animate={{ opacity: 1 }}
+                        // onClick={handleClose}
+                        className="fixed inset-0 z-50  max-w-md mx-auto pointer-events-none"
+                    >
+                        <motion.div
+                            id="drawer"
+                            ref={drawerRef}
+                            onClick={(e) => e.stopPropagation()}
+                            initial={{ y: "100%" }}
+                            animate={{ y: "0%" }}
+                            transition={{
+                                ease: "easeInOut",
+                            }}
+                            className="absolute bottom-0 w-full overflow-hidden rounded-t-3xl bg-neutral-900 pointer-events-auto"
+                            style={{ height }}
+                            drag="y"
+                            dragControls={controls}
+                            onDrag={(e, info) => {
+                                height.set(height.get() - info.delta.y);
+                            }}
+                            onDragEnd={(e, info) => {
+                                let closestSnap = snapHeights.reduce((prev, curr) => Math.abs(curr - height.get()) < Math.abs(prev - height.get()) ? curr : prev);
+                                if (closestSnap == 0) {
+                                    return handleClose();
+                                }
+                                animate("#drawer", {
+                                    height: [height.get(), closestSnap],
+                                });
+                            }}
+
+                            dragListener={false}
+
+                            dragConstraints={{
+                                top: 0,
+                                bottom: 0,
+                            }}
+                            dragElastic={{
+                                top: 0,
+                                bottom: 0,
+                            }}
+                        >
+                            <div className="absolute left-0 right-0 top-0 z-10 flex justify-center p-4">
+                                <button
+                                    onPointerDown={(e) => {
+                                        controls.start(e);
+                                    }}
+                                    className="h-2 w-14 cursor-grab touch-none rounded-full bg-neutral-700 active:cursor-grabbing"
+                                ></button>
+                            </div>
+                            <div className="relative z-0 h-full overflow-y-scroll p-4 pt-12 select-none">
+                                {children}
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </>
+        );
+    };
+    function App() {
+        return (
+            <div className="dark:bg-neutral-900 dark:text-white">
+                <div className="min-h-full max-w-md mx-auto">
+                    <Routes>
+                        <Route path="/landing" element={<EditPage />} />
+                        <Route path="/" element={<EditPage />} />
+                    </Routes>
                 </div>
             </div>
+        );
+    }
+
+    window.render = function render() {
+        if (!window.roots) {
+            const container = document.getElementById('root');
+            window.roots = ReactDOMClient.createRoot(container);
         }
-        ReactDOM.render(<App />, document.getElementById('root'));
-    </script>
+        window.roots.render(
+            <Wrapper>
+                <App />
+            </Wrapper>
+        );
+    }
 
 
-</body>
 
-</html>
+
+</script>
+
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/web-tree-sitter@0.22.2/tree-sitter.js"></script>
+<!-- <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script> -->
+<script type="module">
+    import * as sucrase from 'https://cdn.pika.dev/sucrase'; window.sucrase = sucrase;
+    window.transform = typeof sucrase != 'undefined' ? (code) => sucrase.transform(code, { transforms: ['jsx'] }).code : (code) => Babel.transform(code, { presets: ['react'] }).code;
+    await TreeSitter.init();
+    window.parser = new TreeSitter();
+    window.parser.setLanguage(await TreeSitter.Language.load('https://tree-sitter.github.io/tree-sitter-javascript.wasm'));
+    async function reactiveRun(code) {
+        code = code || [...document.querySelectorAll('script[live]')][0].innerHTML;
+        return await evalSrc(transform(dfs(parser.parse(code).rootNode, (node) => node.type == 'function_declaration', (node) => node).reverse().reduce((src, node) => {
+            let prefix = src.substring(0, node.startIndex);
+            let postfix = src.substring(node.endIndex, src.length);
+            let replace = src.substring(node.startIndex, node.endIndex);
+            let identifier = node.children.find(e => ['identifier'].includes(e.type))?.text;
+            src = prefix + `window.${identifier} = ${replace}` + postfix;
+            return src;
+        }, code)), 'module');
+    }
+    await reactiveRun();
+    window.render();
+
+    function evalSrc(code, type = "text/javascript") {
+        window.scrResolver = window.scrResolver || {};
+        window.scrPromiser = window.scrPromiser || {};
+        let id = Math.random().toString(36).slice(2);
+        window.scrResolver[id] = null;
+        window.scrPromiser[id] = new Promise((resolve) => { window.scrResolver[id] = resolve; });
+        const newScript = document.createElement('script');
+        newScript.type = type;
+        newScript.textContent = code + `window.scrResolver["${id}"]();`;
+        document.body.appendChild(newScript);
+        return window.scrPromiser[id];
+    }
+
+    function dfs(node, matchFn, process, accumulator = []) {
+        if (matchFn(node)) accumulator.push(process(node));
+        node.children.forEach(child => dfs(child, matchFn, process, accumulator));
+        return accumulator;
+    }
+
+
+
+    let lastCode = '';
+    while (1) {
+        try {
+
+            let code = await (await fetch(location.href)).text();
+            if (lastCode && lastCode != code) {
+                let src = (new DOMParser()).parseFromString(code, 'text/html').querySelector('script[live]').innerHTML;
+                let root = parser.parse(src).rootNode;
+                let funcs = dfs(root, (node) => node.type == 'function_declaration', (node) => node);
+                let lastSrc = (new DOMParser()).parseFromString(lastCode, 'text/html').querySelector('script[live]').innerHTML;
+                let lastRoot = parser.parse(lastSrc).rootNode;
+                let lastFuncs = dfs(lastRoot, (node) => node.type == 'function_declaration', (node) => node);
+                let changed = false;
+                for (let i = 0; i < funcs.length; i++) {
+                    let func = funcs[i];
+                    let func_complement = lastFuncs.find(e => e.children.find(e => ['identifier'].includes(e.type))?.text == func.children.find(e => ['identifier'].includes(e.type))?.text);
+                    if (func_complement.text != func.text) {
+                        eruda?.hide();
+                        await eval(transform(`window.${func.children.find(e => ['identifier'].includes(e.type))?.text} = ${func.text}`));
+                        changed = true;
+                    }
+                }
+                if (!changed) {
+                    if (src.length != lastSrc.length) {
+                        await reactiveRun(src);
+                    }
+                }
+                window.render();
+            }
+            lastCode = code;
+        } catch (error) {
+            console.log(error);
+        }
+        await new Promise((r) => setTimeout(r, 1000));
+    }
+
+
+
+
+</script>

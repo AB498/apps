@@ -1,6 +1,7 @@
+// import * as framerMotion from 'https://cdn.jsdelivr.net/npm/framer-motion@11.15.0/+esm';
 (async () => {
 
-    let APP_PREFIX = 'img';
+    let APP_PREFIX = 'photo-editor';
     let APP_ASSETS_PREFIX = 'assets';
 
     function properPath(path) {
@@ -68,6 +69,7 @@
     const { safe, uuid, useAsync, useForceUpdate, poll, useStream, subscribeFnSync, RealtimeComponent, AsyncComponent, StreamComponent, makeReactive, reactive, useBreakpoint, isJSONObject } = await importModule(properPath('utils.js'));
     const { useState, useMemo, useEffect, createContext, useContext, useRef } = window.React;
     const { HashRouter, Route, Switch, Redirect, useHistory, useLocation, Link } = window.ReactRouterDOM;
+    // let motion = framerMotion.motion;
 
     const StateContext = createContext(); // global state
     function Providers({ children }) {
@@ -94,7 +96,11 @@
         window.navigate = (path) => history.push(path);
         return children;
     }
-
+    function Motioned({ children }) {
+        return (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.5 } }} exit={{ opacity: 0, transition: { duration: 0.5 } }}>
+            <div>Hello</div>
+        </motion.div>)
+    }
 
     let App = () => {
         let { state } = window;
@@ -108,10 +114,15 @@
         let location = useLocation();
 
         return (
-            <div className="bg-neutral-900 text-white h-screen border-4 mx-auto aspect-[9/16]">
+            <div className="bg-neutral-900 text-white h-screen mx-auto aspect-[9/16]">
+
+                {/* <Motioned /> */}
                 {/* APP */}
+                {/* <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.5 } }} exit={{ opacity: 0, transition: { duration: 0.5 } }}>
+                    <div>Hello</div>
+                </motion.div> */}
                 <Switch>
-                    <Route exact path="/"><RealtimeComponent path={properPath('components/auth.jsx')} /> </Route>
+                    <Route exact path="/"><RealtimeComponent path={properPath('components/home.jsx')} /></Route>
                     <Route path="/home"><RealtimeComponent path={properPath('components/home.jsx')} /> </Route>
                 </Switch>
                 {
@@ -141,8 +152,8 @@
             <div>
                 <Providers>
                     <Helpers>
-                        <Link to="/" viewTransition>Start</Link>
-                        <Link to="/home" viewTransition>Home</Link>
+                        {/* <Link to="/">Start</Link>
+                        <Link to="/home">Home</Link> */}
                         <App />
                     </Helpers>
                 </Providers>

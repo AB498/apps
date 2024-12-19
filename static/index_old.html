@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            preflights: false
+        };
+    </script>
+
+    <!-- faltui -->
+    <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flat-ui/2.3.0/js/vendor/jquery.min.js"></script>
+
+    <!-- <script src="https://cdn.jsdelivr.net/npm/pocketbase@0.21.3/dist/pocketbase.umd.min.js"></script> -->
+
+
+<body>
+
+    <div id="root"></div>
+
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-router-dom/5.3.4/react-router-dom.js"></script>
+
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel" data-type="module">
+        let apps = await (await fetch('/appnames')).json();
+        let serverBaseName = '';// '/web/backend/v1.0';
+        function App() {
+            return <div className="bg-white dark:bg-black text-black dark:text-white">
+                <div class="text-xl font-extrabold">Apps</div>
+                <div class="my-2"></div>
+                <div class="flex flex-col gap-2 p-2">
+                    {apps.map(app => <div class="rounded shadow border p-2 hover:bg-gray-200 dark:hover:bg-gray-700" onClick={() => window.location.href = `${serverBaseName}/apps/${app}/`}>{app}</div>)}
+                </div>
+            </div>
+        }
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+
+
+</body>
+
+</html>

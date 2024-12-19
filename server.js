@@ -33,15 +33,22 @@ if (false && fs.existsSync(privateKey) && fs.existsSync(certificate)) {
     protocol = 'http';
     port = 8080;
 }
+let appnames = fs.existsSync(path.join(__dirname, 'apps')) && fs.readdirSync(path.join(__dirname, 'apps')) || [];
 
 app.use(express.static(path.join(__dirname, 'static')));
 
 app.get('/', (req, res) => {
     res.send('Hello World!');
 });
+app.get('/test', (req, res) => {
+    res.send('test');
+});
+
+app.get('/appnames', (req, res) => {
+    res.json(appnames);
+});
 
 
-let appnames = fs.readdirSync(path.join(__dirname, 'apps'));
 // app.get(`/apps/:appname`, (req, res, next) => {
 //     // console.log(req.url.split('/'));
 //     if (appnames.includes(req.params.appname))
@@ -100,3 +107,26 @@ function exec(cmd) {
     });
     return [promise, cancel];
 }
+
+
+function safe(fn, onError = () => { }) {
+    try {
+        let res = fn();
+        if (res instanceof Promise) {
+            return (async (resolve, reject) => {
+                try {
+                    return (await res);
+                } catch (e) {
+                    if (onError) onError(e);
+                    return null;
+                }
+            })();
+        } else {
+            return res;
+        }
+    } catch (e) {
+        if (onError) onError(e);
+        return null;
+    }
+}
+

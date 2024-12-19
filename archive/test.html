@@ -1,0 +1,592 @@
+<div id="root"></div>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/web-tree-sitter@0.22.2/tree-sitter.js"></script>
+<script type="text/babel" data-type="module" type="module">
+    import * as React from "https://esm.sh/react@19.0.0/?dev"
+    import * as ReactDOMClient from "https://esm.sh/react-dom@19.0.0/client/?dev"
+    import * as framerMotion from 'https://esm.sh/framer-motion@11.15.0?dev';
+    import * as gradio_client from 'https://esm.sh/@gradio/client?dev';
+    import * as reactTransitionGroup from 'https://esm.sh/react-transition-group@4.4.4?dev';
+    import * as reactRouter from 'https://esm.sh/react-router-dom@7.0.2-pre.0?dev';
+
+
+    let modules = {
+        React, ReactDOMClient, framerMotion, gradio_client, reactTransitionGroup, reactRouter,
+    };
+    Object.entries(modules).forEach(([key, val]) => window[key] = val);
+    const { useState, useMemo, useEffect, createContext, useContext, useRef } = window.React;
+    const { HashRouter, Route, Routes, Redirect, useHistory, useLocation, Link } = reactRouter;
+    const { SwitchTransition, Transition } = reactTransitionGroup;
+    const { motion } = framerMotion;
+    modules = {
+        HashRouter, Route, Routes, Redirect, useHistory, useLocation, Link,
+        useState, useMemo, useEffect, createContext, useContext, useRef, motion
+    };
+    Object.entries(modules).forEach(([key, val]) => window[key] = val);
+
+</script>
+<script type="text/babel" data-type="module" type="module" live>
+
+    async function poll(fn, interval, timeout) {
+        let canceller;
+        let ended = false;
+        if (timeout) {
+            canceller = setTimeout(() => {
+                console.log("Timeout");
+                ended = true;
+                return;
+            }, timeout);
+        }
+        while (!ended) {
+            let res = await fn();
+            if (res) {
+                canceller && clearTimeout(canceller);
+                return res;
+            }
+            await new Promise((r) => setTimeout(r, interval || 200));
+        }
+    };
+
+    await poll(() => window.React);
+
+
+    let APP_PREFIX = 'photo-editor';
+    let APP_ASSETS_PREFIX = 'assets';
+
+    let transform = window.sucrase ? (code) => window.sucrase.transform(code, { transforms: ['jsx'] }).code : (code) => window.Babel.transform(code, { presets: ['react'] }).code;
+
+    function join(...paths) {
+        return paths
+            .map(path => path.replace(/\/+$/, '')) // Remove trailing slashes
+            .join('/')
+            .replace(/\/+/g, '/'); // Replace multiple slashes with a single slash
+    }
+
+    function properPath(path) {
+        return join('/', APP_PREFIX, path);
+    }
+
+    function log(...args) {
+        console.log(...args)
+        return args[args.length - 1];
+    }
+
+    let uuid = () => {
+        return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+            var r = (Math.random() * 16) | 0,
+                v = c == "x" ? r : (r & 0x3) | 0x8;
+            return v.toString(16);
+        });
+    };
+    function safe(fn, onError = () => { }) {
+        try {
+            let res = fn();
+            if (res instanceof Promise) {
+                return (async (resolve, reject) => {
+                    try {
+                        return (await res);
+                    } catch (e) {
+                        if (onError) onError(e);
+                        return null;
+                    }
+                })();
+            } else {
+                return res;
+            }
+        } catch (e) {
+            if (onError) onError(e);
+            return null;
+        }
+    }
+
+
+    function useAsync(asyncFn) {
+        let [data, setData] = useState(null);
+        let [error, setError] = useState(null);
+        useEffect(() => {
+            asyncFn().then(setData).catch(setError);
+        }, []);
+        (error && console.log('useAsync Error', error));
+        return [data, setData, error];
+    }
+    function useStream(fn, cb, cleanup) {
+        let [data, setData] = useState();
+        useEffect(() => {
+            (async () => {
+                setData((await cb()));
+                fn(async () => {
+                    setData((await cb()));
+                });
+            })();
+
+            return () => cleanup && cleanup();
+        }, []);
+        return [data, setData];
+    }
+
+    let subscribeFnSync = (changableAsyncFn, asyncCallback) => {
+        let oldRes = null;
+        let running = true;
+        (async () => {
+            while (running) {
+                let res = await changableAsyncFn();
+                if (oldRes != res) {
+                    oldRes = res;
+                    if (!running) break;
+                    await asyncCallback(res);
+                }
+                oldRes = res;
+                await new Promise((r) => setTimeout(r, 500));
+            }
+            // console.log('Unsubscribed');
+        })();
+        return () => { running = false };
+    }
+    let AsyncComponent = (props) => {
+        let { asyncFn, children, resultProcessorFn } = props || {};
+        let data = useRef(null);
+        let forceUpdate = useForceUpdate();
+        useEffect(() => {
+            asyncFn().then(
+                (res) => {
+                    data.current = resultProcessorFn ? resultProcessorFn(res, props) : res;
+                    forceUpdate();
+                }
+            )
+        }, [asyncFn, resultProcessorFn]);
+
+        return data.current ? data.current : '[ NULL ]';
+    }
+    let StreamComponent = (props) => {
+        let { subscriberFn, children, resultProcessorFn } = props || {};
+        let data = useRef(null);
+        let unsub = useRef(null);
+        let forceUpdate = useForceUpdate();
+        useEffect(() => {
+            if (unsub.current) unsub.current();
+            let updatedResultProcessorFn = (res) => {
+                data.current = resultProcessorFn ? resultProcessorFn(res, props) : res;
+                forceUpdate();
+            };
+            let unsubs = subscriberFn(updatedResultProcessorFn);
+            unsub.current = unsubs;
+        }, [subscriberFn, resultProcessorFn]);
+        return data.current ? data.current : '[ NULL ]';
+
+    }
+    let RealtimeComponent = (props) => {
+        let { path } = props;
+        let originalPath = path;
+        let fn = async () => {
+            let resp = await fetch(path);
+            if (!resp.ok) {
+                let originalPath = path;
+                path = properPath('components/404.jsx');
+                return `()=><div></div>`;
+            }
+            return (await resp.text());
+        };
+        return (
+            <StreamComponent {...props} subscriberFn={
+                (resultProcessorFn) => subscribeFnSync(fn, resultProcessorFn)
+            } resultProcessorFn={(res, props) => {
+                try {
+                    let Comp = eval(transform(res));
+                    return <Comp {...props} uuid={uuid()} {...(path == properPath('components/404.jsx') && { children: originalPath })} />
+                } catch (error) {
+                    return <div>{error + ' ' + res}</div>
+                }
+            }} />
+        )
+    }
+    function MakeComponent({ func: Func, props, stateful = true }) {
+        if (!stateful) return <Func {...props} />;
+        let stateFullComponent = useRef(null);
+        let forceUpdate = useForceUpdate();
+        useEffect(() => {
+            stateFullComponent.current = <Func {...props} />;
+            forceUpdate();
+        }, []);
+        return stateFullComponent.current;
+    }
+
+    function useForceUpdate() {
+        let [, set] = useState(0);
+        return () => set((i) => i + 1);
+    }
+
+    async function importModule(src) {
+        try {
+            let content = await (await fetch(src + '?t=' + Date.now())).text();
+            if (src.slice(-3) == ".js" || src.slice(-4) == ".jsx") return eval(transform(`${content}`));
+            if (src.slice(-3) == ".css") document.body.insertAdjacentHTML("beforeend", `<style>${content}</style>`);
+        } catch (error) {
+            console.log(src, error);
+        }
+    }
+    function isJSONObject(obj) {
+        if ([Date, RegExp, Error].some((t) => obj instanceof t) || Array.isArray(obj)) {
+            return false;
+        }
+        try {
+            JSON.stringify(obj);
+            return obj && typeof obj == "object";
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function makeReactive(obj, setter) {
+        let mutatingArrayFunctions = ["copyWithin", "fill", "pop", "push", "reverse", "shift", "sort", "splice", "unshift"];
+        let handler = {
+            get: function (target, prop) {
+                if (prop == "__isReactive") return true;
+                return target[prop];
+            },
+            set: function (target, prop, value) {
+                target[prop] = value;
+                target[prop] = makeReactive(value, setter);
+                // console.log("set", prop, value, target);
+                if (!prop.startsWith("_")) setter();
+                return true;
+            },
+        };
+        if (!isJSONObject(obj) && !Array.isArray(obj)) {
+            return obj;
+        }
+        let newObj = {};
+        if (Array.isArray(obj)) {
+            newObj = [];
+        }
+        for (const [key, value] of Object.entries(obj)) {
+            newObj[key] = makeReactive(value, setter);
+        }
+        return new Proxy(newObj, handler);
+    }
+
+    let reactive = (obj) => {
+        let [state, setState] = useState(obj);
+        state = makeReactive(state, () => setState(state));
+        return state;
+    };
+
+    function useBreakpoint() {
+        const [breakpoint, setBreakpoint] = useState(handleResize());
+
+        function handleResize() {
+            const width = window.innerWidth;
+            return {
+                sm: width >= 640,
+                md: width >= 768,
+                lg: width >= 1024,
+                xl: width >= 1280,
+            };
+        };
+        useEffect(() => {
+
+            let handler = () => setBreakpoint(handleResize());
+            window.addEventListener("resize", handler);
+
+            return () => window.removeEventListener("resize", handler);
+        }, []);
+
+        return breakpoint;
+    }
+
+    async function getImageFromURL(url) {
+        return await getImageFromBlob(await downloadImageBlobFromUrl(url));
+    }
+
+    async function getBlobFromImage(image) {
+        // let blob = await downloadImageBlobFromUrl(image.src);
+        // image = await getImageFromBlob(blob);
+        // return image;
+        return new Promise(async (resolve, reject) => {
+            image = await getImageFromBlob(await downloadImageBlobFromUrl(image.src));
+            let canvas = document.createElement("canvas");
+            canvas.width = image.width;
+            canvas.height = image.height;
+            let ctx = canvas.getContext("2d");
+            ctx.drawImage(image, 0, 0);
+            canvas.toBlob((blob) => {
+                resolve(blob);
+            }, "image/png");
+        })
+
+    }
+    function cropImage(image, x, y, width, height) {
+        // Assuming the function should crop a given image to a specific area
+        return new Promise((resolve, reject) => {
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(image, 0, 0, image.width, image.height, x, y, width, height);
+
+            canvas.toBlob(async (blob) => {
+                resolve(await getImageFromBlob(blob));
+            }, 'image/png');
+        });
+
+    }
+    async function getImageFromCanvas(canvas) {
+        return await getImageFromURL(canvas.toDataURL("image/png"));
+    }
+    function getImageFromBlob(blob) {
+        return new Promise((resolve, reject) => {
+            let image = new Image(); // Create a new Image object
+
+            // Handle the onload event
+            image.onload = function () {
+                resolve(image); // Resolve the Promise with the loaded Image object
+            };
+
+            // Handle errors
+            image.onerror = function () {
+                reject(new Error("Failed to load image from blob"));
+            };
+
+            // Generate a URL for the blob and set it as the image source
+            let blobURL = URL.createObjectURL(blob);
+            image.src = blobURL;
+        });
+    }
+
+    async function downloadImageBlobFromUrl(url) { return await fetch(url).then((r) => r.blob()); }
+
+
+    function Providers({ children }) {
+        const [globalState, setGlobalState] = useState(safeParse(localStorage["state"]) || {});
+        useEffect(() => { localStorage["state"] = JSON.stringify(globalState) }, [globalState]);
+        window.globalState = globalState;
+        // let breakpoint = useBreakpoint();
+        // window.breakpoint = breakpoint;
+        return (
+            <HashRouter>
+                <StateContext.Provider value={[state]}>
+                    {children}
+                </StateContext.Provider>
+            </HashRouter>
+        );
+
+    }
+
+
+    function safeStringify(...args) {
+        let replacer = ((obj) => {
+            let cache = [];
+            return (key, value) => {
+                if (isFunction(value)) {
+                    return "" + value;
+                }
+                return typeof value === "object" && value !== null
+                    ? cache.includes(value)
+                        ? undefined // Duplicate reference found, discard key
+                        : cache.push(value) && value // Store value in our collection
+                    : value;
+            };
+        })();
+        return JSON.stringify(args[0], replacer, ...args.slice(2));
+    };
+    function safeParse(...args) {
+        try {
+            // Define a reviver function to handle parsing functions
+            const reviver = (key, value) => {
+                if (typeof value === "string" && value.startsWith("function")) {
+                    // If the value is a string starting with 'function', parse it back to a function
+                    const functionStr = `(${value})`;
+                    return eval(functionStr); // Using eval to convert string to function
+                }
+                return value;
+            };
+
+            return JSON.parse(args[0], reviver);
+        } catch (e) {
+            console.error(e);
+            return null;
+        }
+    };
+
+
+    function funcType(x) {
+        return typeof x === "function" ? (x.prototype ? (Object.getOwnPropertyDescriptor(x, "prototype").writable ? "function" : "class") : x.constructor.name === "AsyncFunction" ? "async" : "arrow") : "";
+    }
+    function isFunction(x) {
+        return typeof x === "function" ? (x.prototype ? (Object.getOwnPropertyDescriptor(x, "prototype").writable ? true : false) : true) : false;
+        // return typeof x === "function" && x.prototype && Object.getOwnPropertyDescriptor(x, "prototype").writable ? true : false;
+    }
+
+    const consoleWarn = console.error;
+    const SUPPRESSED_WARNINGS = [
+        "Warning: React has detected a change in the order of Hooks",
+        "Warning: ReactDOM.render is no longer supported",
+        "Warning: `value` prop on `input` should not be null",
+        "cdn.tailwindcss.com should not be used in production",
+        "Download the React DevTools",
+        "You are using the in-browser Babel",
+        "Warning: A component is changing an uncontrolled",
+        "Warning: Invalid DOM property",
+        'Each child in a list should have a unique "key" prop',
+    ];
+
+    // ["error"].forEach(
+    //   (method) =>
+    //   (console[method] = function filterWarnings(msg, ...args) {
+    //     try {
+    //       if (!SUPPRESSED_WARNINGS.some((entry) => msg.includes(entry))) {
+    //         consoleWarn(msg, ...args);
+    //       }
+    //     } catch (e) { }
+    //   })
+    // );
+    function Home() {
+        return (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.5 } }} exit={{ opacity: 0, transition: { duration: 0.5 } }}>
+                <div>Home</div>
+            </motion.div>
+        )
+    };
+    function Start() {
+        return (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.5 } }} exit={{ opacity: 0, transition: { duration: 0.5 } }}>
+                <div>Start</div>
+            </motion.div>
+        )
+    };
+    function App() {
+        return (
+            <div>
+                <Link to="/">Start</Link>
+                <Link to="/home">Home</Link>
+                <Routes>
+                    <Route path="/" element={<Home />} />
+                </Routes>
+                <Routes>
+                    <Route path="/" element={<Start />} />
+                </Routes>
+            </div>
+        );
+    }
+    function Wrapper({ children }) {
+        return (
+            <div>
+                <HashRouter>
+                    {children}
+                </HashRouter>
+            </div>
+        )
+    };
+
+
+    window.render = function render() {
+        if (!window.roots) {
+            const container = document.getElementById('root');
+            window.roots = ReactDOMClient.createRoot(container);
+        }
+        window.roots.render(
+            <Wrapper>
+                <App />
+            </Wrapper>
+        );
+    }
+
+    //        ReactDOMClient.createRoot(document.getElementById('root')).render(
+    //            <Wrapper>
+    //                <App />
+    //            </Wrapper>
+    //        );
+
+    let modules = {
+        React, ReactDOMClient, framerMotion, gradio_client, reactTransitionGroup, reactRouter,
+        safe, uuid, useAsync, useForceUpdate, poll, useStream, subscribeFnSync, transform,
+        MakeComponent, getImageFromURL, getImageFromBlob, getBlobFromImage, downloadImageBlobFromUrl, cropImage, getImageFromCanvas,
+        RealtimeComponent, AsyncComponent, StreamComponent, makeReactive, reactive, useBreakpoint, isJSONObject
+    };
+    Object.entries(modules).forEach(([key, val]) => window[key] = val);
+
+
+
+
+
+
+    function con(a) { console.log(a) };
+    con(1);
+    window.eval(transform(`window.con = function (a) { console.log(a + 1); }`));
+    con(1);
+
+
+</script>
+
+<script type="module">
+
+
+    // import * as sucrase from 'https://cdn.pika.dev/sucrase';
+    // window.sucrase = sucrase;
+    window.transform = typeof sucrase != 'undefined' ? (code) => sucrase.transform(code, { transforms: ['jsx'] }).code : (code) => Babel.transform(code, { presets: ['react'] }).code;
+    await TreeSitter.init();
+    window.parser = new TreeSitter();
+    window.parser.setLanguage(await TreeSitter.Language.load('tree-sitter-javascript.wasm'));
+    await evalSrc(transform(dfs(parser.parse([...document.querySelectorAll('script[live]')][0].innerHTML).rootNode, (node) => node.type == 'function_declaration', (node) => node).reverse().reduce((src, node) => {
+        let prefix = src.substring(0, node.startIndex);
+        let postfix = src.substring(node.endIndex, src.length);
+        let replace = src.substring(node.startIndex, node.endIndex);
+        let identifier = node.children.find(e => ['identifier'].includes(e.type))?.text;
+        src = prefix + `window.${identifier} = ${replace}` + postfix;
+        return src;
+    }, [...document.querySelectorAll('script[live]')][0].innerHTML)), 'module');
+
+    window.render();
+
+    function evalSrc(code, type = "text/javascript") {
+        window.scrResolver = window.scrResolver || {};
+        window.scrPromiser = window.scrPromiser || {};
+        let id = Math.random().toString(36).slice(2);
+        window.scrResolver[id] = null;
+        window.scrPromiser[id] = new Promise((resolve) => { window.scrResolver[id] = resolve; });
+        const newScript = document.createElement('script');
+        newScript.type = type;
+        newScript.textContent = code + `window.scrResolver["${id}"]();`;
+        document.body.appendChild(newScript);
+        return window.scrPromiser[id];
+    }
+
+    function dfs(node, matchFn, process, accumulator = []) {
+        if (matchFn(node)) accumulator.push(process(node));
+        node.children.forEach(child => dfs(child, matchFn, process, accumulator));
+        return accumulator;
+    }
+
+
+    
+    let lastCode = '';
+    while (1) {
+        let code = await (await fetch(location.href)).text();
+        console.log(code.length)
+        if (lastCode && lastCode != code) {
+            console.log('src upd');
+            let src = (new DOMParser()).parseFromString(code, 'text/html').querySelector('script[live]').innerHTML;
+            let root = parser.parse(src).rootNode;
+            let funcs = dfs(root, (node) => node.type == 'function_declaration', (node) => node);
+            let lastSrc = (new DOMParser()).parseFromString(lastCode, 'text/html').querySelector('script[live]').innerHTML;
+            let lastRoot = parser.parse(lastSrc).rootNode;
+            let lastFuncs = dfs(lastRoot, (node) => node.type == 'function_declaration', (node) => node);
+            for (let i = 0; i < funcs.length; i++) {
+                let func = funcs[i];
+                let func_complement = lastFuncs.find(e => e.children.find(e => ['identifier'].includes(e.type))?.text == func.children.find(e => ['identifier'].includes(e.type))?.text);
+                if (func_complement.text != func.text) {
+                    console.log(func_complement.text);
+                    await eval(transform(`window.${func.children.find(e => ['identifier'].includes(e.type))?.text} = ${func.text}`));
+                }
+            }
+            window.render();
+        }
+        lastCode = code;
+        await new Promise((r) => setTimeout(r, 1000));
+    }
+
+
+
+
+
+</script>

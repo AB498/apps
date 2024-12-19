@@ -1,4 +1,7 @@
 (() => {
+    const { useState, useMemo, useEffect, createContext, useContext, useRef } = window.React;
+    let transform = window.sucrase ? (code) => window.sucrase.transform(code, { transforms: ['jsx'] }).code : (code) => window.Babel.transform(code, { presets: ['react'] }).code;
+
     let uuid = () => {
         return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
             var r = (Math.random() * 16) | 0,
@@ -6,6 +9,26 @@
             return v.toString(16);
         });
     };
+    function safe(fn, onError = () => { }) {
+        try {
+            let res = fn();
+            if (res instanceof Promise) {
+                return (async (resolve, reject) => {
+                    try {
+                        return (await res);
+                    } catch (e) {
+                        if (onError) onError(e);
+                        return null;
+                    }
+                })();
+            } else {
+                return res;
+            }
+        } catch (e) {
+            if (onError) onError(e);
+            return null;
+        }
+    }
 
     let poll = async (fn, t, breakTimeout) => {
         let canceller;
@@ -26,10 +49,6 @@
             await new Promise((r) => setTimeout(r, t || 200));
         }
     };
-
-
-    const { useState, useMemo, useEffect, createContext, useContext, useRef } = window.React;
-    let transform = window.sucrase ? (code) => window.sucrase.transform(code, { transforms: ['jsx'] }).code : (code) => window.Babel.transform(code, { presets: ['react'] }).code;
 
     function useAsync(asyncFn) {
         let [data, setData] = useState(null);
@@ -147,9 +166,13 @@
     }
 
     async function importModule(src) {
-        let content = await (await fetch(src + '?t=' + Date.now())).text();
-        if (src.slice(-3) == ".js" || src.slice(-4) == ".jsx") return eval(transform(`${content}`));
-        if (src.slice(-3) == ".css") document.body.insertAdjacentHTML("beforeend", `<style>${content}</style>`);
+        try {
+            let content = await (await fetch(src + '?t=' + Date.now())).text();
+            if (src.slice(-3) == ".js" || src.slice(-4) == ".jsx") return eval(transform(`${content}`));
+            if (src.slice(-3) == ".css") document.body.insertAdjacentHTML("beforeend", `<style>${content}</style>`);
+        } catch (error) {
+            console.log(src, error);
+        }
     }
     function isJSONObject(obj) {
         if ([Date, RegExp, Error].some((t) => obj instanceof t) || Array.isArray(obj)) {
@@ -219,26 +242,7 @@
 
         return breakpoint;
     }
-    function safe(fn, onError = () => { }) {
-        try {
-            let res = fn();
-            if (res instanceof Promise) {
-                return (async (resolve, reject) => {
-                    try {
-                        return (await res);
-                    } catch (e) {
-                        if (onError) onError(e);
-                        return null;
-                    }
-                })();
-            } else {
-                return res;
-            }
-        } catch (e) {
-            if (onError) onError(e);
-            return null;
-        }
-    }
+
     async function getImageFromURL(url) {
         return await getImageFromBlob(await downloadImageBlobFromUrl(url));
     }
@@ -300,14 +304,12 @@
     }
 
     async function downloadImageBlobFromUrl(url) { return await fetch(url).then((r) => r.blob()); }
-    // export default { ... }
+
     let modules = {
-        safe, uuid, useAsync, useForceUpdate, poll, useStream, subscribeFnSync,
+        safe, uuid, useAsync, useForceUpdate, poll, useStream, subscribeFnSync, transform,
         MakeComponent, getImageFromURL, getImageFromBlob, getBlobFromImage, downloadImageBlobFromUrl, cropImage, getImageFromCanvas,
         RealtimeComponent, AsyncComponent, StreamComponent, makeReactive, reactive, useBreakpoint, isJSONObject
     };
-    Object.keys(modules).forEach((key) => {
-        window[key] = modules[key];
-    })
+    Object.keys(modules).forEach((key) => { window[key] = modules[key]; });
     return modules;
 })()
