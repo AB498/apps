@@ -1172,17 +1172,18 @@
                                                             let start = Date.now();
                                                             let result = await ImageAPI.aiFill(canvasAPI.current.componentRef.current.image, mask, composite, prompt);
                                                             console.log('done ai fill', Date.now() - start, 'ms');
-                                                            
-                                                            
-                                                            console.log('result', result,result?.src);
+
+
+                                                            console.log('result', result, result?.src);
+                                                            console.image(result);
                                                             result = await alterResolution(result, canvasAPI.current.componentRef.current.image.width, canvasAPI.current.componentRef.current.image.height);
-                                                            
+
                                                             if (result) canvasAPI.current.setImage(result);
-                                                            
+
                                                             componentRef.current.taskInfo = null;
                                                             canvasAPI.current.exitDrawMaskMode();
                                                             setComponentState({ ...componentRef.current });
-                                                            
+
                                                         } catch (error) {
                                                             componentRef.current.taskInfo = null;
                                                             canvasAPI.current.exitDrawMaskMode();
