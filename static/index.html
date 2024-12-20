@@ -1157,9 +1157,9 @@
                                                         let prompt = document.querySelector('#prompt-input').value;
                                                         let mask = await canvasAPI.current.getDrawnMask();
                                                         let composite = await imprintOnImage(canvasAPI.current.componentRef.current.image, mask);
-                                                        console.image(canvasAPI.current.componentRef.current.image.src, 100);
-                                                        console.image(mask.src, 100);
-                                                        console.image(composite.src, 100);
+                                                        console.image(canvasAPI.current.componentRef.current.image.src);
+                                                        console.image(mask.src);
+                                                        console.image(composite.src);
 
                                                         componentRef.current.taskInfo = {};
                                                         setComponentState({ ...componentRef.current });
@@ -1169,6 +1169,7 @@
                                                         let start = Date.now();
                                                         let result = await ImageAPI.aiFill(canvasAPI.current.componentRef.current.image, mask, composite, prompt);
                                                         console.log('done ai fill', Date.now() - start, 'ms');
+                                                        result = await alterResolution(result, canvasAPI.current.componentRef.current.image.width, canvasAPI.current.componentRef.current.image.height);
 
                                                         componentRef.current.taskInfo = null;
                                                         setComponentState({ ...componentRef.current });
@@ -1274,6 +1275,7 @@
             const ctx = canvas.getContext('2d');
             canvas.height = height || image.naturalHeight;
             canvas.width = canvas.height * image.naturalWidth / image.naturalHeight;
+            console.log('width', image.naturalWidth, 'height', image.naturalHeight);
             ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
             const dataUrl = canvas.toDataURL();
             const style = [
