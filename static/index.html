@@ -1219,11 +1219,12 @@
                                                                 if (taskId == componentRef.current.taskInfo?.taskId) {
 
                                                                     console.log('result', result, result?.src);
+                                                                    if (!result) throw new Error('Failed AI Fill. Result is null');
                                                                     result = await alterResolution(result, canvasAPI.current.componentRef.current.image.width, canvasAPI.current.componentRef.current.image.height);
                                                                     console.image(result);
                                                                     // might have thrown so catch
 
-                                                                    if (result) canvasAPI.current.setImage(result);
+                                                                    canvasAPI.current.setImage(result);
 
                                                                     componentRef.current.controls = [
                                                                         <i className="fi-rr-check rounded-full bg-green-500 w-10 aspect-square flex items-center justify-center cursor-pointer"
