@@ -231,9 +231,9 @@ app.post('/flux', async (req, res) => {
     } catch (error) {
         console.log(error);
         try {
-            res.status(500).json({ ...error });
+            res.json({ ...error });
         } catch (error) {
-            res.status(500).json({ error: 'Unknown error' });
+            res.json({ error: 'Unknown error' });
         }
     }
 });
