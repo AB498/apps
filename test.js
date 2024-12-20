@@ -23,7 +23,7 @@ function uint8ArrayToBase64(uint8Array) {
 (async () => {
 
     let imageBlob2 = await uint8ArrayToBase64(new Uint8Array(await (new Blob([fs.readFileSync(path.join(__dirname, 'static', 'imgs', 'codeplay.png'))])).arrayBuffer()));
-    console.log(imageBlob2);
+    // console.log(imageBlob2);
     const gradio_client = import('@gradio/client');
     let Client = ((await gradio_client).Client);
 
@@ -58,8 +58,8 @@ function uint8ArrayToBase64(uint8Array) {
 
 
 
-    // const postResponse = await fetch('https://www.world.ovh/flux', {
-    const postResponse = await fetch('http://localhost:8080/flux', {
+    const postResponse = await fetch('https://www.world.ovh/flux', {
+    // const postResponse = await fetch('http://localhost:8080/flux', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
