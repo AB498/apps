@@ -1175,8 +1175,8 @@
 
 
                                                             console.log('result', result, result?.src);
-                                                            console.image(result);
                                                             result = await alterResolution(result, canvasAPI.current.componentRef.current.image.width, canvasAPI.current.componentRef.current.image.height);
+                                                            console.image(result);
 
                                                             if (result) canvasAPI.current.setImage(result);
 
