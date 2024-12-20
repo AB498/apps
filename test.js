@@ -39,7 +39,8 @@ let imageBlob2 = Buffer.from(fs.readFileSync(path.join(__dirname, 'static', 'img
 
 
 
-    const postResponse = await fetch('http://localhost:8080/flux', {
+    // const postResponse = await fetch('http://localhost:8080/flux', {
+    const postResponse = await fetch('https://www.world.ovh/flux', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -48,6 +49,6 @@ let imageBlob2 = Buffer.from(fs.readFileSync(path.join(__dirname, 'static', 'img
     });
 
     const postData = await postResponse.json();
-    console.log('Received data:', postData);
+    console.log('Received data:', postData.data);
 
 })().catch(console.error);

@@ -225,7 +225,7 @@ app.post('/flux', async (req, res) => {
             guidance_scale: guidance_scale, num_inference_steps: num_inference_steps,
         });
         console.log(result.data[0].url)
-        res.json(result.data);
+        res.json(result);
     } catch (error) {
         console.log(error);
         try {

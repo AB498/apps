@@ -148,10 +148,49 @@
                     randomize_seed: true,
                     width: image.width,
                     height: image.height,
-                    guidance_scale: 30,
-                    num_inference_steps: 30,
+                    guidance_scale: 10,
+                    num_inference_steps: 10,
                 });
                 return await getImageFromURL(result.data[0].url); // filled
+
+            } catch (error) {
+                console.log(error);
+                let fallbackResult = await this.aiFill2(image, mask, composite, prompt);
+                if (fallbackResult) {
+                    console.log("Fallback api used");
+                    return fallbackResult;
+                }
+                return null;
+            }
+        },
+        async aiFill2(image, mask, composite, prompt) {
+            try {
+                let imageBlob = await getBlobFromImage(image);
+                let maskBlob = await getBlobFromImage(mask);
+                let compositeBlob = await getBlobFromImage(composite);
+                let dat = {
+                    imageBlob, // You'll need to handle file upload separately
+                    maskBlob,
+                    compositeBlob,
+                    prompt,
+                    seed: 0,         // seed
+                    randomize_seed: true,      // randomize seed
+                    width: image.width,       // width
+                    height: image.height,      // height
+                    guidance_scale: 10,         // guidance scale
+                    num_inference_steps: 10          // inference steps
+
+                };
+                const postResponse = await fetch('https://www.world.ovh/flux', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(dat)
+                });
+
+                const postData = await postResponse.json();
+                return await getImageFromURL(postData.data[0].url);
 
             } catch (error) {
                 console.log(error);
