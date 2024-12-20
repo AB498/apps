@@ -210,8 +210,8 @@
                 });
 
                 const postData = await postResponse.json();
+                console.log('fallback api response', postData);
                 if (!postData.data) return null;
-                console.log(postData);
                 return await getImageFromURL(postData.data[0].url);
 
             } catch (error) {
@@ -1051,43 +1051,43 @@
                         <DragCloseDrawer open={componentRef.current.extraControlsOpen} setOpen={(x) => { componentRef.current.extraControlsOpen = x; setComponentState({ ...componentRef.current }); }} >
                             {<componentRef.current.extraControls />}
                         </DragCloseDrawer>
-                        <div class="h-40 w-full overflow-auto p-2 flex items-center justify-center">
+                        <div class="h-40 w-full overflow-auto p-4 flex items-center justify-center">
                             <Swiper
-                                spaceBetween={5}
+                                spaceBetween={10}
                                 slidesPerView={3}
                                 grid={{ rows: 2, columns: 3 }}
                                 modules={[Grid, Pagination]}
                             >
                                 <SwiperSlide>
-                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'template' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-16 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
+                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'template' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
                                         onClick={async () => { window.notification('Not Implemented') }}>
                                         <i className="fi-rr-template"></i>
                                         <div className="text-xs">Templates</div>
                                     </button>
                                 </SwiperSlide>
                                 <SwiperSlide>
-                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'text' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-16 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
+                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'text' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
                                         onClick={async () => { window.notification('Not Implemented') }}>
                                         <i className="fi-rr-text"></i>
                                         <div className="text-xs">Text</div>
                                     </button>
                                 </SwiperSlide>
                                 <SwiperSlide>
-                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'filters' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-16 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
+                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'filters' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
                                         onClick={async () => { window.notification('Not Implemented') }}>
                                         <i className="fi-rr-filter"></i>
                                         <div className="text-xs">Filters</div>
                                     </button>
                                 </SwiperSlide>
                                 <SwiperSlide>
-                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'perspective' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-16 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
+                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'perspective' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
                                         onClick={async () => { window.notification('Not Implemented') }}>
                                         <i className="fi-rr-telescope"></i>
                                         <div className="text-xs">Perspective</div>
                                     </button>
                                 </SwiperSlide>
                                 <SwiperSlide>
-                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'bg-remove' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-16 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
+                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'bg-remove' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
                                         onClick={async () => {
                                             componentRef.current.extraControlsOpen = true;
                                             setComponentState({ ...componentRef.current });
@@ -1103,7 +1103,7 @@
                                             };
                                             componentRef.current.extraControlsOpen = true;
                                             componentRef.current.extraControls = () => (
-                                                <><button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name == 'bg-remove' && componentRef.current.taskInfo.subTasks?.includes('ai-bg-remove') ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-16 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
+                                                <><button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name == 'bg-remove' && componentRef.current.taskInfo.subTasks?.includes('ai-bg-remove') ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
                                                     onClick={async () => {
                                                         try {
                                                             let taskId = uuid();
@@ -1169,7 +1169,7 @@
                                 </SwiperSlide>
 
                                 <SwiperSlide>
-                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'ai-fill' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-16 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
+                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'ai-fill' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
                                         onClick={async () => {
 
                                             componentRef.current.extraControlsOpen = true;
@@ -1235,7 +1235,7 @@
                                                                                 componentRef.current.taskInfo = null;
                                                                                 setComponentState({ ...componentRef.current });
                                                                             }}></i>,
-                                                                            <i className="fi-rr-cross rounded-full bg-red-500 w-10 aspect-square flex items-center justify-center cursor-pointer"
+                                                                        <i className="fi-rr-cross rounded-full bg-red-500 w-10 aspect-square flex items-center justify-center cursor-pointer"
                                                                             onClick={() => {
                                                                                 canvasAPI.current.exitDrawMaskMode();
                                                                                 canvasAPI.current.discardChanges();
@@ -1314,7 +1314,7 @@
                                     </button>
                                 </SwiperSlide>
                                 <SwiperSlide>
-                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'filters' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-16 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
+                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'filters' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
                                         onClick={async () => { window.notification('Not Implemented') }}>
                                         <i className="fi-rr-resize"></i>
                                         <div className="text-xs">Crop & Resize</div>
