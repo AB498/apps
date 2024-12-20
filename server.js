@@ -9,7 +9,8 @@ const http = require('http');
 const https = require('https');
 const path = require('path');
 const fs = require('fs');
-const gradio_client = import('@gradio/client');
+
+
 
 const { createProxyMiddleware, Filter, Options, RequestHandler } = require('http-proxy-middleware');
 
@@ -79,6 +80,7 @@ for (let appname of appnames) {
 
     try {
 
+        const gradio_client = import('@gradio/client');
         let Client = ((await gradio_client).Client);
 
         let imageBlob = Buffer.from(fs.readFileSync(path.join(__dirname, 'static', 'imgs', 'codeplay.png')));// await fs.readFileSync(path.join(__dirname, 'static', 'imgs', 'codeplay.png'));
@@ -200,9 +202,18 @@ for (let appname of appnames) {
 });
 
 
+app.use(express.json({ limit: '50mb' })); // for parsing application/json
 app.post('/flux', async (req, res) => {
+
     try {
+
+        const gradio_client = import('@gradio/client');
+        let Client = ((await gradio_client).Client);
+
         let { imageBlob, maskBlob, compositeBlob, prompt, seed, randomize_seed, width, height, guidance_scale, num_inference_steps } = req.body;
+        imageBlob = Buffer.from(imageBlob);
+        maskBlob = Buffer.from(maskBlob);
+        compositeBlob = Buffer.from(compositeBlob);
         let client = await Client.connect("black-forest-labs/FLUX.1-Fill-dev", { hf_token: "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" });
         let result = await client.predict("/infer", {
             edit_images: { "background": imageBlob, "layers": [maskBlob], "composite": compositeBlob },
@@ -217,7 +228,11 @@ app.post('/flux', async (req, res) => {
         res.json(result.data);
     } catch (error) {
         console.log(error);
-        res.status(500).json({ error: error.message });
+        try {
+            res.status(500).json({ ...error });
+        } catch (error) {
+            res.status(500).json({ error: 'Unknown error' });
+        }
     }
 });
 
