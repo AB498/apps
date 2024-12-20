@@ -210,10 +210,12 @@ app.post('/flux', async (req, res) => {
         const gradio_client = import('@gradio/client');
         let Client = ((await gradio_client).Client);
 
+        console.log('flux', req.body);
         let { imageBlob, maskBlob, compositeBlob, prompt, seed, randomize_seed, width, height, guidance_scale, num_inference_steps } = req.body;
         imageBlob = Buffer.from(imageBlob);
         maskBlob = Buffer.from(maskBlob);
         compositeBlob = Buffer.from(compositeBlob);
+        console.log(imageBlob, maskBlob, compositeBlob, prompt, seed, randomize_seed, width, height, guidance_scale, num_inference_steps)
         let client = await Client.connect("black-forest-labs/FLUX.1-Fill-dev", { hf_token: "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" });
         let result = await client.predict("/infer", {
             edit_images: { "background": imageBlob, "layers": [maskBlob], "composite": compositeBlob },

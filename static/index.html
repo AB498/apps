@@ -181,6 +181,7 @@
                     num_inference_steps: 10          // inference steps
 
                 };
+                // const postResponse = await fetch('http://localhost:8080/flux', {
                 const postResponse = await fetch('https://www.world.ovh/flux', {
                     method: 'POST',
                     headers: {
@@ -190,6 +191,8 @@
                 });
 
                 const postData = await postResponse.json();
+                if (!postData.data) return null;
+                console.log(postData);
                 return await getImageFromURL(postData.data[0].url);
 
             } catch (error) {
