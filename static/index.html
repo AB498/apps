@@ -168,8 +168,8 @@
                     randomize_seed: true,
                     width: image.width,
                     height: image.height,
-                    guidance_scale: 10,
-                    num_inference_steps: 10,
+                    guidance_scale: 50,
+                    num_inference_steps: 30,
                 });
                 return await getImageFromURL(result.data[0].url); // filled
 
@@ -197,8 +197,8 @@
                     randomize_seed: true,      // randomize seed
                     width: image.width,       // width
                     height: image.height,      // height
-                    guidance_scale: 10,         // guidance scale
-                    num_inference_steps: 10          // inference steps
+                    guidance_scale: 50,
+                    num_inference_steps: 30,
 
                 };
                 // const postResponse = await fetch('http://localhost:8080/flux', {
