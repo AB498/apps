@@ -1,6 +1,5 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Swiper/11.0.5/swiper-bundle.css"
     integrity="sha512-pmAAV1X4Nh5jA9m+jcvwJXFQvCBi3T17aZ1KWkqXr7g/O2YMvO8rfaa5ETWDuBvRq6fbDjlw4jHL44jNTScaKg=="
     crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -34,7 +33,7 @@
     import * as reactRouter from 'https://esm.sh/react-router-dom@7.0.2-pre.0?dev';
     import * as swiperModule from 'https://esm.sh/swiper@11.1.15/react?dev';
     import * as swiperModules from 'https://esm.sh/swiper@11.1.15/modules?dev';
-    console.log('v2');
+    console.log('v3');
 
     const { Swiper, SwiperSlide } = swiperModule;
     const { Grid, Pagination } = swiperModules;
@@ -969,7 +968,7 @@
         return (
             <div className="relative w-full h-full">
                 {children}
-                {loading && <div className="absolute top-0 left-0 w-full h-full bg-black/50 flex items-center justify-center">
+                {loading && <div className="absolute z-50 top-0 left-0 w-full h-full bg-black/50 flex items-center justify-center">
                     <div className="flex flex-col items-center gap-2">
                         <div className="text-white">Loading</div>
                         <div className="w-10 h-10">
@@ -1031,7 +1030,7 @@
 
         useEffect(() => {
             if (!componentState.taskState) return;
-            
+
         });
         if (componentState.processState == ProcessState.EDIT)
             return (
@@ -1364,7 +1363,7 @@
                     </h2>
                     <div className="mt-4 w-full h-96">
 
-                        <Loader loading={componentRef.current.landingImagesLoaded <= 6} >
+                        <Loader loading={componentRef.current.landingImagesLoaded < 50} >
                             <LoadOnce resolve={() => (
                                 <Swiper
                                     spaceBetween={5}
@@ -1376,10 +1375,14 @@
                                         <SwiperSlide>
                                             <img key={i} ref={(el) => {
                                                 if (!el) return;
-                                                el.onload = () => {
-                                                    componentRef.current.landingImagesLoaded++;
-                                                    setComponentState({ ...componentRef.current });
-                                                }
+                                                let interval = setInterval(function () {
+                                                    if (el.complete) {
+                                                        clearInterval(interval);
+                                                        componentRef.current.landingImagesLoaded++;
+                                                        setComponentState({ ...componentRef.current });
+                                                    }
+                                                }, 500);
+
                                             }} className="p-1 h-full aspect-video cursor-pointer" src={`https://picsum.photos/seed/${Math.random()}/200/300`} alt=""
                                                 onClick={async (e) => {
                                                     componentRef.current.image = await getImageFromURL(e.target.src);
