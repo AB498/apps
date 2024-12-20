@@ -859,10 +859,14 @@
         useEffect(() => {
             if (!divRef.current) return;
             function outputsize() {
-                componentRef.current.stage?.height(divRef.current.offsetHeight);
-                componentRef.current.stage?.width(divRef.current.offsetWidth);
+                try {
+                    componentRef.current.stage?.height(divRef.current.offsetHeight);
+                    componentRef.current.stage?.width(divRef.current.offsetWidth);
+                } catch (error) {
+                    console.log(error);   
+                }
             }
-            outputsize()
+            outputsize();
             new ResizeObserver(outputsize).observe(divRef.current);
 
             (async () => {
@@ -1338,7 +1342,7 @@
             const yStart = typeof y.get() === "number" ? y.get() : 0;
 
             await animate("#drawer", {
-                y: [yStart, drawerRef.current.offsetHeight],
+                y: [yStart, drawerRef.current?.offsetHeight],
             });
 
             setOpen(false);

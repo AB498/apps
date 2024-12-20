@@ -9,6 +9,7 @@ const http = require('http');
 const https = require('https');
 const path = require('path');
 const fs = require('fs');
+const gradio_client = import('@gradio/client');
 
 const { createProxyMiddleware, Filter, Options, RequestHandler } = require('http-proxy-middleware');
 
@@ -72,6 +73,134 @@ for (let appname of appnames) {
         }),
     );
 }
+
+
+(async () => {
+
+    try {
+
+        // let Client = ((await gradio_client).Client);
+
+        let imageBlob = await fs.readFileSync(path.join(__dirname, 'static', 'imgs', 'codeplay.png'));
+        let maskBlob = imageBlob;
+        let compositeBlob = imageBlob;
+        // let client = await Client.connect("black-forest-labs/FLUX.1-Fill-dev", { hf_token: "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" });
+        // let result = await client.predict("/infer", {
+        //     edit_images: { "background": imageBlob, "layers": [maskBlob], "composite": compositeBlob },
+        //     prompt: "Hello",
+        //     seed: 0,
+        //     randomize_seed: true,
+        //     width: 500,
+        //     height: 500,
+        //     guidance_scale: 30,
+        //     num_inference_steps: 30,
+        // });
+        // console.log(result.data[0].url)
+
+
+
+        const fetchResult = async () => {
+            try {
+              // First make the POST request
+              const postResponse = await fetch('https://black-forest-labs-flux-1-fill-dev.hf.space/gradio_api/call/infer', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  data: [
+                    {
+                      background: imageBlob, // You'll need to handle file upload separately
+                      layers: [maskBlob],
+                      composite: compositeBlob
+                    },
+                    "Hello!!", // prompt
+                    0,         // seed
+                    true,      // randomize seed
+                    256,       // width
+                    256,       // height
+                    1,         // guidance scale
+                    1          // inference steps
+                  ]
+                })
+              });
+          
+              const postData = await postResponse.json();
+              console.log('Received data:', postData);
+              const eventId = postData.event_id;
+              const https = require('https');
+
+              /**
+               * Asynchronously reads from a Server-Sent Events (SSE) stream.
+               * @param {string} url - The URL of the SSE stream.
+               * @returns {Promise<void>} Resolves when the connection ends or errors.
+               */
+              async function readSSEStream(url) {
+                  return new Promise((resolve, reject) => {
+                      const req = https.get(url, (res) => {
+                          // Validate content type
+                          const contentType = res.headers['content-type'];
+                          if (!contentType || !contentType.startsWith('text/event-stream')) {
+                              reject(new Error(`Unexpected content type: ${contentType}`));
+                              return;
+                          }
+              
+                          console.log('Connected to the event stream.');
+              
+                          // Listen for chunks of data
+                          res.on('data', (chunk) => {
+                              const message = chunk.toString();
+                              console.log('Received message:', message);
+              
+                              // Parse "data: ..." messages (basic parsing logic)
+                              if (message.startsWith('data: ')) {
+                                  const data = message.slice(6).trim();
+                                  console.log('Parsed data:', data);
+                              }
+                          });
+              
+                          // Handle stream end
+                          res.on('end', () => {
+                              console.log('Connection closed.');
+                              resolve();
+                          });
+              
+                          // Handle errors
+                          res.on('error', (err) => {
+                              console.error('Stream error:', err);
+                              reject(err);
+                          });
+                      });
+              
+                      // Handle request errors
+                      req.on('error', (err) => {
+                          console.error('Request error:', err);
+                          reject(err);
+                      });
+                  });
+              }
+              
+              // Then make the GET request using the event ID
+              const getResponse = await fetch(
+                `https://black-forest-labs-flux-1-fill-dev.hf.space/gradio_api/call/infer/${eventId}`
+              );
+              
+              // We should check the actual response type from the headers
+              console.log(await readSSEStream(`https://black-forest-labs-flux-1-fill-dev.hf.space/gradio_api/call/infer/${eventId}`));
+                        
+            } catch (error) {
+              console.error('Error:', error);
+            }
+          };
+          
+          fetchResult();
+    } catch (error) {
+        console.log(error);
+    }
+})();
+
+
+
 // fallback if no route matches
 app.use((req, res) => res.status(404).send('Not Found ' + req.url));
 server.listen(port, () => {
