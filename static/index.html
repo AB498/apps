@@ -863,7 +863,7 @@
                     componentRef.current.stage?.height(divRef.current.offsetHeight);
                     componentRef.current.stage?.width(divRef.current.offsetWidth);
                 } catch (error) {
-                    console.log(error);   
+                    console.log(error);
                 }
             }
             outputsize();
@@ -1015,8 +1015,8 @@
                                     <button class="w-32 h-16 rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4"
                                         onClick={async () => {
                                             componentRef.current.extraControlsOpen = true;
-                                            componentRef.current.extraControls = (
-                                                <>  <button class="w-32 h-16 rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4"
+                                            componentRef.current.extraControls = () => (
+                                                <><button class="w-32 h-16 rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4"
                                                     onClick={async () => {
                                                         let [result, cancel] = canvasAPI.current.bgRemoveTask();
                                                         componentRef.current.taskInfo = { result, cancel };
@@ -1027,8 +1027,7 @@
                                                     }}>
                                                     <i className="fi-rr-copy-image"></i>
                                                     <div className="text-xs">AI Remove</div>
-                                                </button>
-                                                </>
+                                                </button></>
                                             );
                                             setComponentState({ ...componentRef.current });
                                             componentRef.current.controls = [
