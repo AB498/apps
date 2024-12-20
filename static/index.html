@@ -944,7 +944,7 @@
             DONE: 'DONE'
         }
         let componentRef = useRef({
-            taskState: null, processState: ProcessState.PICK_IMAGE, image: null, controls: []
+            taskState: null, processState: ProcessState.PICK_IMAGE, image: null, controls: [], strokeWidth: 20
         });
         let [componentState, setComponentState] = useState({ ...componentRef.current });
         let canvasAPI = useRef({ current: null });
@@ -961,7 +961,7 @@
                             componentRef.current.processState = ProcessState.PICK_IMAGE;
                             setComponentState({ ...componentRef.current });
                         }}></i>
-                        <div>Edit</div>
+                        <div>Edit {uuid().slice(0, 5)}</div>
                     </h2>
                     <div class="flex flex-col w-full h-full">
                         <div class="grow">
@@ -970,7 +970,7 @@
                             </Loader>
                         </div>
                         <DragCloseDrawer open={componentRef.current.extraControlsOpen} setOpen={(x) => { componentRef.current.extraControlsOpen = x; setComponentState({ ...componentRef.current }); }} >
-                            {componentRef.current.extraControls}
+                            {<componentRef.current.extraControls />}
                         </DragCloseDrawer>
                         <div class="h-40 w-full overflow-auto p-2 flex items-center justify-center">
                             <Swiper
@@ -1059,17 +1059,16 @@
                                             canvasAPI.current.drawMaskMode();
 
                                             componentRef.current.extraControlsOpen = true;
-                                            componentRef.current.extraControls = (
-                                                <><div class="text-lg font-bold">Stroke Width</div>
-                                                    <div class="flex gap">
-                                                        <input type="range" min="1" max="300" value={componentRef.current.strokeWidth} class="w-full" onChange={(e) => {
-                                                            canvasAPI.current.setStrokeWidth(e.target.value);
-                                                            componentRef.current.strokeWidth = e.target.value;
-                                                            setComponentState({ ...componentRef.current });
-                                                        }} />
-                                                        <div class="w-10">{canvasAPI.current?.componentRef?.current.strokeWidth}</div>
-                                                    </div></>
-                                            );
+                                            let Comp = () => <><div class="text-lg font-bold">Stroke Width</div>
+                                                <div class="flex gap">
+                                                    <input type="range" min="1" max="300" value={componentRef.current.strokeWidth} class="w-full" onChange={(e) => {
+                                                        canvasAPI.current.setStrokeWidth(e.target.value);
+                                                        componentRef.current.strokeWidth = e.target.value;
+                                                        setComponentState({ ...componentRef.current });
+                                                    }} />
+                                                    <div class="w-10">{componentRef.current.strokeWidth}</div>
+                                                </div></>
+                                            componentRef.current.extraControls = Comp;
                                             setComponentState({ ...componentRef.current });
 
                                             componentRef.current.controls = [
