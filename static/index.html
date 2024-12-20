@@ -23,7 +23,14 @@
 
 
 <div id="root"></div>
-
+<div id="splash-screen"
+    class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-blue-500 dark:bg-neutral-900 transition-all duration-500">
+    <svg class="animate-bounce relative" width="100" height="100" viewBox="0 0 100 100" fill="none"
+        xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="45" fill="#222" />
+        <path d="M 50 15 L 50 35 M 50 55 L 50 75 M 35 50 L 65 50" stroke="#fff" stroke-width="10" />
+    </svg>
+</div>
 
 <script type="text/babel" data-type="module" type="module" live>
     import * as React from "https://esm.sh/react@19.0.0?dev"
@@ -1605,7 +1612,7 @@
                             transition={{
                                 ease: "easeInOut",
                             }}
-                            className="absolute bottom-0 w-full overflow-hidden rounded-t-3xl bg-neutral-900 pointer-events-auto"
+                            className="absolute bottom-0 w-full overflow-hidden rounded-t-3xl bg-neutral-100 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 pointer-events-auto"
                             style={{ height }}
                             drag="y"
                             dragControls={controls}
@@ -1721,7 +1728,8 @@
         );
     }
 
-
+    document.querySelector('#splash-screen').classList.add('opacity-0');
+    document.querySelector('#splash-screen').classList.add('pointer-events-none');
 
 
 </script>
