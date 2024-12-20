@@ -1154,33 +1154,42 @@
                                                 <input id="prompt-input" type="text" className="w-64 h-10 px-2 rounded bg-neutral-200 dark:bg-neutral-800 placeholder:text-gray-500" placeholder="Prompt..." />,
                                                 <i className="fi-rr-paper-plane rounded-full bg-blue-500 w-10 aspect-square flex items-center justify-center cursor-pointer"
                                                     onClick={async () => {
-                                                        let prompt = document.querySelector('#prompt-input').value;
-                                                        let mask = await canvasAPI.current.getDrawnMask();
-                                                        let composite = await imprintOnImage(canvasAPI.current.componentRef.current.image, mask);
-                                                        console.image(canvasAPI.current.componentRef.current.image.src);
-                                                        console.image(mask.src);
-                                                        console.image(composite.src);
 
-                                                        componentRef.current.taskInfo = {};
-                                                        setComponentState({ ...componentRef.current });
+                                                        try {
+
+                                                            let prompt = document.querySelector('#prompt-input').value;
+                                                            let mask = await canvasAPI.current.getDrawnMask();
+                                                            let composite = await imprintOnImage(canvasAPI.current.componentRef.current.image, mask);
+                                                            console.image(canvasAPI.current.componentRef.current.image.src);
+                                                            console.image(mask.src);
+                                                            console.image(composite.src);
+
+                                                            componentRef.current.taskInfo = {};
+                                                            setComponentState({ ...componentRef.current });
 
 
-                                                        console.log('started ai fill');
-                                                        let start = Date.now();
-                                                        let result = await ImageAPI.aiFill(canvasAPI.current.componentRef.current.image, mask, composite, prompt);
-                                                        console.log('done ai fill', Date.now() - start, 'ms');
-                                                        result = await alterResolution(result, canvasAPI.current.componentRef.current.image.width, canvasAPI.current.componentRef.current.image.height);
+                                                            console.log('started ai fill');
+                                                            let start = Date.now();
+                                                            let result = await ImageAPI.aiFill(canvasAPI.current.componentRef.current.image, mask, composite, prompt);
+                                                            console.log('done ai fill', Date.now() - start, 'ms');
+                                                            console.log('result', result);
+                                                            result = await alterResolution(result, canvasAPI.current.componentRef.current.image.width, canvasAPI.current.componentRef.current.image.height);
 
-                                                        componentRef.current.taskInfo = null;
-                                                        setComponentState({ ...componentRef.current });
+                                                            componentRef.current.taskInfo = null;
+                                                            setComponentState({ ...componentRef.current });
 
-                                                        console.image(result?.src);
+                                                            console.image(result?.src);
 
-                                                        if (result) canvasAPI.current.setImage(result);
+                                                            if (result) canvasAPI.current.setImage(result);
 
-                                                        canvasAPI.current.exitDrawMaskMode();
-                                                        componentRef.current.controls = []
-                                                        setComponentState({ ...componentRef.current });
+                                                            canvasAPI.current.exitDrawMaskMode();
+                                                            setComponentState({ ...componentRef.current });
+
+                                                        } catch (error) {
+                                                            canvasAPI.current.exitDrawMaskMode();
+                                                            setComponentState({ ...componentRef.current });
+
+                                                        }
 
                                                     }}
                                                 ></i>,
@@ -1212,7 +1221,7 @@
                     <h2 class="mt-4 text-2xl font-medium text-gray-900 dark:text-white text-center w-full">
                         Pick an image
                     </h2>
-                    <div class="mt-4 w-full relative border-2 border-gray-300 dark:border-gray-700 border-dashed rounded-lg p-4 dark:bg-neutral-800" id="dropzone">
+                    <div class="mt-4 w-full relative border-2 border-gray-300 dark:border-gray-700 border-dashed rounded-lg p-4 dark:bg-neutral-800 cursor-pointer" id="dropzone">
                         <div class="text-center" onClick={async () => {
                             componentRef.current.image = await getImageFromURL(URL.createObjectURL(await getFileUpload()));
                             componentRef.current.processState = ProcessState.EDIT;
@@ -1232,7 +1241,11 @@
                             </p>
                         </div>
                     </div>
-                    <button class="mt-4 w-full flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white dark:bg-gray-700 dark:hover:bg-gray-600 dark:focus:ring-gray-900 dark:focus:ring-2 dark:focus:ring-offset-2 dark:focus:ring-offset-gray-800 bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <button class="mt-4 w-full flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white dark:bg-gray-700 dark:hover:bg-gray-600 dark:focus:ring-gray-900 dark:focus:ring-2 dark:focus:ring-offset-2 dark:focus:ring-offset-gray-800 bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" onClick={async () => {
+                        componentRef.current.image = await getImageFromURL(URL.createObjectURL(await getFileUpload()));
+                        componentRef.current.processState = ProcessState.EDIT;
+                        setComponentState({ ...componentRef.current });
+                    }} >
                         Upload
                     </button>
                     <h2 class="mt-6 text-2xl font-medium text-gray-900 dark:text-white text-center w-full">
@@ -1248,7 +1261,7 @@
                         >
                             {Array.from({ length: 50 }).map((_, i) => (
                                 <SwiperSlide>
-                                    <img className="p-1 h-full aspect-video" src={`https://picsum.photos/seed/${Math.random()}/200/300`} alt=""
+                                    <img className="p-1 h-full aspect-video cursor-pointer" src={`https://picsum.photos/seed/${Math.random()}/200/300`} alt=""
                                         onClick={async (e) => {
 
                                             componentRef.current.image = await getImageFromURL(e.target.src);
