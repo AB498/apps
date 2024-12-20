@@ -1024,14 +1024,14 @@
             DONE: 'DONE'
         }
         let componentRef = useRef({
-            taskState: null, processState: ProcessState.PICK_IMAGE, image: null, controls: [], strokeWidth: 20, maskDrawMode: 'On'
+            landingImagesLoaded: 0, taskState: null, processState: ProcessState.PICK_IMAGE, image: null, controls: [], strokeWidth: 20, maskDrawMode: 'On'
         });
         let [componentState, setComponentState] = useState({ ...componentRef.current });
         let canvasAPI = useRef({ current: null });
 
         useEffect(() => {
             if (!componentState.taskState) return;
-
+            
         });
         if (componentState.processState == ProcessState.EDIT)
             return (
@@ -1364,30 +1364,50 @@
                     </h2>
                     <div className="mt-4 w-full h-96">
 
-                        <Swiper
-                            spaceBetween={5}
-                            slidesPerView={3}
-                            grid={{ rows: 2, columns: 3 }}
-                            modules={[Grid, Pagination]}
-                        >
-                            {Array.from({ length: 50 }).map((_, i) => (
-                                <SwiperSlide>
-                                    <img className="p-1 h-full aspect-video cursor-pointer" src={`https://picsum.photos/seed/${Math.random()}/200/300`} alt=""
-                                        onClick={async (e) => {
+                        <Loader loading={componentRef.current.landingImagesLoaded <= 6} >
+                            <LoadOnce resolve={() => (
+                                <Swiper
+                                    spaceBetween={5}
+                                    slidesPerView={3}
+                                    grid={{ rows: 2, columns: 3 }}
+                                    modules={[Grid, Pagination]}
+                                >
+                                    {Array.from({ length: 50 }).map((img, i) => (
+                                        <SwiperSlide>
+                                            <img key={i} ref={(el) => {
+                                                if (!el) return;
+                                                el.onload = () => {
+                                                    componentRef.current.landingImagesLoaded++;
+                                                    setComponentState({ ...componentRef.current });
+                                                }
+                                            }} className="p-1 h-full aspect-video cursor-pointer" src={`https://picsum.photos/seed/${Math.random()}/200/300`} alt=""
+                                                onClick={async (e) => {
+                                                    componentRef.current.image = await getImageFromURL(e.target.src);
+                                                    componentRef.current.processState = ProcessState.EDIT;
+                                                    setComponentState({ ...componentRef.current });
+                                                }}
+                                            />
+                                        </SwiperSlide>
+                                    ))}
 
-                                            componentRef.current.image = await getImageFromURL(e.target.src);
-                                            componentRef.current.processState = ProcessState.EDIT;
-                                            setComponentState({ ...componentRef.current });
-                                        }}
-                                    />
-                                </SwiperSlide>
-                            ))}
-                        </Swiper>
+                                </Swiper>
+                            )
+                            }></LoadOnce>
+                        </Loader>
 
                     </div>
                 </div>
 
             );
+    }
+    function LoadOnce({ resolve }) {
+        let [x, setX] = useState(null);
+        useEffect(() => {
+            if (!x) setX(resolve());
+        }, []);
+        return (
+            x
+        );
     }
 
     function Chip({ text, selected, setSelected, }) {
