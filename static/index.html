@@ -1086,7 +1086,7 @@
                                                         componentRef.current.controls = [];
                                                         setComponentState({ ...componentRef.current });
                                                     }}></i>,
-                                                <input id="prompt-input" type="text" class="w-64 h-10 px-2 rounded bg-neutral-200 dark:bg-neutral-800" placehoder="Prompt" />,
+                                                <input id="prompt-input" type="text" className="w-64 h-10 px-2 rounded bg-neutral-200 dark:bg-neutral-800 placeholder:text-gray-500" placeholder="Prompt..." />,
                                                 <i className="fi-rr-paper-plane rounded-full bg-blue-500 w-10 aspect-square flex items-center justify-center cursor-pointer"
                                                     onClick={async () => {
                                                         let prompt = document.querySelector('#prompt-input').value;
