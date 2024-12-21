@@ -1,0 +1,168 @@
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Swiper/11.0.5/swiper-bundle.css"
+    integrity="sha512-pmAAV1X4Nh5jA9m+jcvwJXFQvCBi3T17aZ1KWkqXr7g/O2YMvO8rfaa5ETWDuBvRq6fbDjlw4jHL44jNTScaKg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+<div id="root"></div>
+<script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@19.0.0?dev",
+        "react-dom/client": "https://esm.sh/react-dom@19.0.0/client?dev",
+        "framer-motion": "https://esm.sh/framer-motion@11.15.0?dev",
+        "@gradio/client": "https://esm.sh/@gradio/client?dev",
+        "react-router-dom": "https://esm.sh/react-router-dom@7.0.2-pre.0?dev",
+        "swiper/react": "https://esm.sh/swiper@11.1.15/react?dev",
+        "swiper/modules": "https://esm.sh/swiper@11.1.15/modules?dev",
+        "@splidejs/react-splide": "https://esm.sh/*@splidejs/react-splide?dev",
+        "@splidejs/splide-extension-grid": "https://esm.sh/*@splidejs/splide-extension-grid?dev"
+      }
+    }
+</script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel" data-type="module">
+    import * as React from "react";
+    import * as ReactDOMClient from "react-dom/client";
+    import * as framerMotion from "framer-motion";
+    import * as gradio_client from "@gradio/client";
+    import * as reactRouter from "react-router-dom";
+    import * as swiperModule from "swiper/react";
+    import * as swiperModules from "swiper/modules";
+    import * as reactSplide from "@splidejs/react-splide";
+    import { Grid } from "@splidejs/splide-extension-grid";
+
+
+    const { Splide, SplideSlide, SplideTrack } = reactSplide;
+    const { Swiper, SwiperSlide } = swiperModule;
+
+    let modules = {
+        React,
+        ReactDOMClient,
+        framerMotion,
+        gradio_client,
+        reactRouter,
+        swiperModule,
+        swiperModules,
+        reactSplide,
+    };
+    Object.entries(modules).forEach(([key, val]) => window[key] = val);
+
+    ReactDOMClient.createRoot(document.getElementById("root")).render(
+        <div>
+            <div class="h-1/2">
+                <Splide
+                    hasTrack={false}
+                    extensions={{ Grid }}
+                    options={{
+                        gap: '1rem',
+                        pagination: 0,
+                        arrows: 2,
+                        grid: {
+                            rows: 2,
+                            cols: 3,
+                            gap: {
+                                row: '1rem',
+                                col: '1rem',
+                            },
+                        },
+                    }}
+                >
+                    <SplideTrack>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                        <SplideSlide>
+                            <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                        </SplideSlide>
+                    </SplideTrack>
+
+                </Splide>
+                <Swiper>
+                    <SwiperSlide>
+                        <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                    </SwiperSlide>
+                    <SwiperSlide>
+                        <img class="h-full w-full" src="/static/imgs/codeplay.png" alt="Image 1" />
+                    </SwiperSlide>
+                </Swiper>
+            </div>
+        </div>
+    );
+
+</script>

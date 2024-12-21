@@ -1,5 +1,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<!-- <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script> -->
+<link href="https://cdn.jsdelivr.net/npm/@splidejs/splide@latest/dist/css/splide.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Swiper/11.0.5/swiper-bundle.css"
     integrity="sha512-pmAAV1X4Nh5jA9m+jcvwJXFQvCBi3T17aZ1KWkqXr7g/O2YMvO8rfaa5ETWDuBvRq6fbDjlw4jHL44jNTScaKg=="
     crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -31,34 +33,58 @@
         <path d="M 50 15 L 50 35 M 50 55 L 50 75 M 35 50 L 65 50" stroke="#fff" stroke-width="10" />
     </svg>
 </div>
+<style>
+
+</style>
+
+<script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@19.0.0?dev",
+        "react-dom/client": "https://esm.sh/react-dom@19.0.0/client?dev",
+        "framer-motion": "https://esm.sh/framer-motion@11.15.0?dev",
+        "@gradio/client": "https://esm.sh/@gradio/client?dev",
+        "react-router-dom": "https://esm.sh/react-router-dom@7.0.2-pre.0?dev",
+        "swiper/react": "https://esm.sh/swiper@11.1.15/react?dev",
+        "swiper/modules": "https://esm.sh/swiper@11.1.15/modules?dev",
+        "@splidejs/react-splide": "https://esm.sh/*@splidejs/react-splide?dev",
+        "@splidejs/splide-extension-grid": "https://esm.sh/*@splidejs/splide-extension-grid?dev"
+      }
+    }
+</script>
 
 <script type="text/babel" data-type="module" type="module" live>
-    import * as React from "https://esm.sh/react@19.0.0?dev"
-    import * as ReactDOMClient from "https://esm.sh/react-dom@19.0.0/client?dev"
-    import * as framerMotion from 'https://esm.sh/framer-motion@11.15.0?dev';
-    import * as gradio_client from 'https://esm.sh/@gradio/client?dev';
-    import * as reactRouter from 'https://esm.sh/react-router-dom@7.0.2-pre.0?dev';
-    import * as swiperModule from 'https://esm.sh/swiper@11.1.15/react?dev';
-    import * as swiperModules from 'https://esm.sh/swiper@11.1.15/modules?dev';
+    import * as React from "react";
+    import * as ReactDOMClient from "react-dom/client";
+    import * as framerMotion from "framer-motion";
+    import * as gradio_client from "@gradio/client";
+    import * as reactRouter from "react-router-dom";
+    import * as swiperModule from "swiper/react";
+    import * as swiperModules from "swiper/modules";
+    import * as reactSplide from "@splidejs/react-splide";
+    import * as splideGrid from "@splidejs/splide-extension-grid";
+
     console.log('v3');
 
+    const { Splide, SplideSlide, SplideTrack } = reactSplide;
     const { Swiper, SwiperSlide } = swiperModule;
-    const { Grid, Pagination } = swiperModules;
+    const { Grid } = splideGrid;
+    // const { Grid, Pagination } = swiperModules;
 
     const { useState, useMemo, useEffect, createContext, useContext, useRef } = React;
     const { HashRouter, Route, Routes, Redirect, useHistory, useLocation, Link } = reactRouter;
     const { useDragControls, useMotionValue, useAnimate, motion, AnimatePresence } = framerMotion;
 
-
     let maxDimensions = { width: 500, height: 500 };
 
     let modules = {
         maxDimensions,
+        reactSplide, Splide, SplideSlide, SplideTrack,
         // safe, uuid, useAsync, useForceUpdate, poll, useStream, subscribeFnSync, transform,
         // MakeComponent, getImageFromURL, getImageFromBlob, getBlobFromImage, downloadImageBlobFromUrl, cropImage, getImageFromCanvas,
         // RealtimeComponent, AsyncComponent, StreamComponent, makeReactive, reactive, useBreakpoint, isJSONObject
         useState, useMemo, useEffect, createContext, useContext, useRef,
-        swiperModule, Swiper, SwiperSlide, Grid, Pagination,
+        swiperModule, Splide, SwiperSlide, Grid,
         useDragControls, useMotionValue, useAnimate, motion, AnimatePresence,
         HashRouter, Route, Routes, Redirect, useHistory, useLocation, Link,
         React, ReactDOMClient, framerMotion, gradio_client, reactRouter,
@@ -1058,180 +1084,108 @@
                         <DragCloseDrawer open={componentRef.current.extraControlsOpen} setOpen={(x) => { componentRef.current.extraControlsOpen = x; setComponentState({ ...componentRef.current }); }} >
                             {<componentRef.current.extraControls />}
                         </DragCloseDrawer>
-                        <div class="h-40 w-full overflow-auto p-4 flex items-center justify-center">
-                            <Swiper
-                                spaceBetween={10}
-                                slidesPerView={3}
-                                grid={{ rows: 2, columns: 3 }}
-                                modules={[Grid, Pagination]}
+
+                        <div class="w-full h-40 p-4 flex items-center justify-center">
+
+                            <Splide
+                                onMounted={(Splide) => {
+                                    // Splide.Components.Autoplay.play();
+                                }}
+                                hasTrack={false}
+                                extensions={{ Grid }}
+                                options={{
+                                    width: '100%',
+                                    height: '100%',
+                                    perPage: 3,
+                                    perMove: 1,
+                                    gap: '1rem',
+                                    pagination: 0,
+                                    arrows: 2,
+                                    grid: {
+                                        rows: 2,
+                                        cols: 1,
+                                        gap: {
+                                            row: '1rem',
+                                            col: '1rem',
+                                        },
+                                    },
+                                }}
                             >
-                                <SwiperSlide>
-                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'template' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
-                                        onClick={async () => { window.notification('Not Implemented') }}>
-                                        <i className="fi-rr-template"></i>
-                                        <div className="text-xs">Templates</div>
-                                    </button>
-                                </SwiperSlide>
-                                <SwiperSlide>
-                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'text' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
-                                        onClick={async () => { window.notification('Not Implemented') }}>
-                                        <i className="fi-rr-text"></i>
-                                        <div className="text-xs">Text</div>
-                                    </button>
-                                </SwiperSlide>
-                                <SwiperSlide>
-                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'filters' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
-                                        onClick={async () => { window.notification('Not Implemented') }}>
-                                        <i className="fi-rr-filter"></i>
-                                        <div className="text-xs">Filters</div>
-                                    </button>
-                                </SwiperSlide>
-                                <SwiperSlide>
-                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'perspective' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
-                                        onClick={async () => { window.notification('Not Implemented') }}>
-                                        <i className="fi-rr-telescope"></i>
-                                        <div className="text-xs">Perspective</div>
-                                    </button>
-                                </SwiperSlide>
-                                <SwiperSlide>
-                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'bg-remove' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
-                                        onClick={async () => {
-                                            componentRef.current.extraControlsOpen = true;
-                                            setComponentState({ ...componentRef.current });
-                                            if (componentRef.current.taskInfo) return console.log('some task already running');
-                                            componentRef.current.taskInfo = {
-                                                name: 'bg-remove', title: <div class="flex items-center"><div>Background Remove</div><div class="grow"></div><a class="underline text-sm text-red-500 cursor-pointer" onClick={() => {
-                                                    canvasAPI.current.exitDrawMaskMode();
-                                                    componentRef.current.extraControlsOpen = false;
-                                                    componentRef.current.controls = [];
-                                                    componentRef.current.taskInfo = null;
-                                                    setComponentState({ ...componentRef.current });
-                                                }}>Cancel</a></div>
-                                            };
-                                            componentRef.current.extraControlsOpen = true;
-                                            componentRef.current.extraControls = () => (
-                                                <><button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name == 'bg-remove' && componentRef.current.taskInfo.subTasks?.includes('ai-bg-remove') ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
-                                                    onClick={async () => {
-                                                        try {
-                                                            let taskId = uuid();
+                                <div className="splide__arrows">
+                                    <div className="splide__arrow splide__arrow--prev left-0 -translate-x-full w-auto bg-transparent top-1/2 -translate-y-1/2">
+                                        <i className="fi-rr-angle-left flex scale-y-150"></i>
+                                    </div>
+                                    <div className="splide__arrow splide__arrow--next right-0 translate-x-full w-auto bg-transparent top-1/2 -translate-y-1/2">
+                                        <i className="fi-rr-angle-right flex scale-y-150"></i>
+                                    </div>
+                                </div>
 
-                                                            componentRef.current.taskInfo.disableCanvas = true;
-                                                            componentRef.current.taskInfo.taskId = taskId;
-                                                            componentRef.current.taskInfo.subTasks = ['ai-bg-remove'];
-                                                            setComponentState({ ...componentRef.current });
-
-                                                            console.log('started bg removal');
-                                                            let start = Date.now();
-                                                            let [resultImage, resultMask] = await ImageAPI.removeBg(canvasAPI.current.componentRef.current.image);
-                                                            console.log('done bg removal', Date.now() - start, 'ms');
-
-
-                                                            if (taskId == componentRef.current.taskInfo?.taskId) {
-
-                                                                if (resultImage) canvasAPI.current.setImage(resultImage);
-
-
-                                                                componentRef.current.controls = [
-                                                                    <i className="fi-rr-check rounded-full bg-green-500 w-10 aspect-square flex items-center justify-center cursor-pointer"
-                                                                        onClick={() => {
-                                                                            canvasAPI.current.exitDrawMaskMode();
-                                                                            canvasAPI.current.applyChanges();
-                                                                            componentRef.current.extraControlsOpen = false;
-                                                                            componentRef.current.controls = [];
-                                                                            componentRef.current.taskInfo = null;
-                                                                            setComponentState({ ...componentRef.current });
-                                                                        }}></i>,
-                                                                    <i className="fi-rr-cross rounded-full bg-red-500 w-10 aspect-square flex items-center justify-center cursor-pointer"
-                                                                        onClick={() => {
-                                                                            canvasAPI.current.exitDrawMaskMode();
-                                                                            canvasAPI.current.discardChanges();
-                                                                            componentRef.current.extraControlsOpen = false;
-                                                                            componentRef.current.controls = [];
-                                                                            componentRef.current.taskInfo = null;
-                                                                            setComponentState({ ...componentRef.current });
-                                                                        }}></i>,
-                                                                ]
-                                                                componentRef.current.taskInfo.disableCanvas = false;
-                                                                setComponentState({ ...componentRef.current });
-                                                            } else {
-                                                                console.log('task cancelled. not updating');
-                                                            }
-                                                        } catch (error) {
-                                                            window.notification('Failed Background Remove.');
-                                                            console.log('Errored:', error);
-                                                        }
-                                                    }}>
-                                                    <i className="fi-rr-copy-image"></i>
-                                                    <div className="text-xs">AI Remove</div>
-                                                </button></>
-                                            );
-                                            setComponentState({ ...componentRef.current });
-                                            // let [result, cancel] = canvasAPI.current.bgRemoveTask();
-                                            // componentRef.current.taskInfo = { result, cancel };
-                                            // setComponentState({ ...componentRef.current });
-                                        }}>
-                                        <i className="fi-rr-copy-image"></i>
-                                        <div className="text-xs">Background Remove</div>
-                                    </button>
-                                </SwiperSlide>
-
-                                <SwiperSlide>
-                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'ai-fill' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
-                                        onClick={async () => {
-
-                                            componentRef.current.extraControlsOpen = true;
-                                            setComponentState({ ...componentRef.current });
-                                            if (componentRef.current.taskInfo) return console.log('some task already running');
-
-                                            // add apply/cancel controls
-                                            componentRef.current.taskInfo = {
-                                                name: 'ai-fill', title: <div class="flex items-center"><div>AI Fill</div><div class="grow"></div><a class="underline text-sm text-red-500 cursor-pointer" onClick={() => {
-                                                    canvasAPI.current.exitDrawMaskMode();
-                                                    componentRef.current.extraControlsOpen = false;
-                                                    componentRef.current.controls = [];
-                                                    componentRef.current.taskInfo = null;
-                                                    setComponentState({ ...componentRef.current });
-                                                }}>Cancel</a></div>
-                                            };
-                                            setComponentState({ ...componentRef.current });
-                                            componentRef.current.extraControlsOpen = true;
-                                            let Comp = () => {
-                                                useEffect(() => { if ((componentRef.current.maskDrawMode || 'On') == 'On') canvasAPI.current.drawMaskMode(); else canvasAPI.current.exitDrawMaskMode(); }, []);
-
-                                                return (<div className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name == 'ai-fill' && componentRef.current.taskInfo.subTasks?.includes('ai-fill-prompt') ? 'pointer-events-none opacity-50' : ''} w-full flex flex-col items-start gap-2`}>
-                                                    <div class="text-lg font-bold">Prompt</div>
-                                                    <div class="flex gap-2 w-full">
-                                                        <input id="prompt-input" type="text" className="grow h-10 px-2 rounded bg-neutral-200 dark:bg-neutral-800 placeholder:text-gray-500" placeholder="Prompt..." />
-                                                        <div className={`${componentRef.current.maskDrawMode == 'Off' ? 'pointer-events-none opacity-50' : ''} flex items-center gap-2 rounded bg-blue-500 px-2 cursor-pointer text-white`} onClick={async () => {
+                                <SplideTrack>
+                                    <SplideSlide>
+                                        <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'template' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
+                                            onClick={async () => { window.notification('Not Implemented') }}>
+                                            <i className="fi-rr-template"></i>
+                                            <div className="text-xs">Templates</div>
+                                        </button>
+                                    </SplideSlide>
+                                    <SplideSlide>
+                                        <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'text' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
+                                            onClick={async () => { window.notification('Not Implemented') }}>
+                                            <i className="fi-rr-text"></i>
+                                            <div className="text-xs">Text</div>
+                                        </button>
+                                    </SplideSlide>
+                                    <SplideSlide>
+                                        <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'filters' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
+                                            onClick={async () => { window.notification('Not Implemented') }}>
+                                            <i className="fi-rr-filter"></i>
+                                            <div className="text-xs">Filters</div>
+                                        </button>
+                                    </SplideSlide>
+                                    <SplideSlide>
+                                        <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'perspective' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
+                                            onClick={async () => { window.notification('Not Implemented') }}>
+                                            <i className="fi-rr-telescope"></i>
+                                            <div className="text-xs">Perspective</div>
+                                        </button>
+                                    </SplideSlide>
+                                    <SplideSlide>
+                                        <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'bg-remove' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
+                                            onClick={async () => {
+                                                componentRef.current.extraControlsOpen = true;
+                                                setComponentState({ ...componentRef.current });
+                                                if (componentRef.current.taskInfo) return console.log('some task already running');
+                                                componentRef.current.taskInfo = {
+                                                    name: 'bg-remove', title: <div class="flex items-center"><div>Background Remove</div><div class="grow"></div><a class="underline text-sm text-red-500 cursor-pointer" onClick={() => {
+                                                        canvasAPI.current.exitDrawMaskMode();
+                                                        componentRef.current.extraControlsOpen = false;
+                                                        componentRef.current.controls = [];
+                                                        componentRef.current.taskInfo = null;
+                                                        setComponentState({ ...componentRef.current });
+                                                    }}>Cancel</a></div>
+                                                };
+                                                componentRef.current.extraControlsOpen = true;
+                                                componentRef.current.extraControls = () => (
+                                                    <><button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name == 'bg-remove' && componentRef.current.taskInfo.subTasks?.includes('ai-bg-remove') ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
+                                                        onClick={async () => {
                                                             try {
                                                                 let taskId = uuid();
 
-                                                                let prompt = document.querySelector('#prompt-input').value;
-                                                                let mask = await canvasAPI.current.getDrawnMask();
-                                                                let composite = await imprintOnImage(canvasAPI.current.componentRef.current.image, mask);
-                                                                console.image(canvasAPI.current.componentRef.current.image.src);
-                                                                console.image(mask.src);
-                                                                console.image(composite.src);
-
                                                                 componentRef.current.taskInfo.disableCanvas = true;
-                                                                componentRef.current.taskInfo.subTasks = ['ai-fill-prompt'];
                                                                 componentRef.current.taskInfo.taskId = taskId;
+                                                                componentRef.current.taskInfo.subTasks = ['ai-bg-remove'];
                                                                 setComponentState({ ...componentRef.current });
 
-                                                                console.log('started ai fill');
+                                                                console.log('started bg removal');
                                                                 let start = Date.now();
-                                                                let result = await ImageAPI.aiFill(canvasAPI.current.componentRef.current.image, mask, composite, prompt);
-                                                                console.log('done ai fill', Date.now() - start, 'ms');
+                                                                let [resultImage, resultMask] = await ImageAPI.removeBg(canvasAPI.current.componentRef.current.image);
+                                                                console.log('done bg removal', Date.now() - start, 'ms');
+
 
                                                                 if (taskId == componentRef.current.taskInfo?.taskId) {
 
-                                                                    console.log('result', result, result?.src);
-                                                                    if (!result) throw new Error('Failed AI Fill. Result is null');
-                                                                    result = await alterResolution(result, canvasAPI.current.componentRef.current.image.width, canvasAPI.current.componentRef.current.image.height);
-                                                                    console.image(result);
-                                                                    // might have thrown so catch
+                                                                    if (resultImage) canvasAPI.current.setImage(resultImage);
 
-                                                                    canvasAPI.current.setImage(result);
 
                                                                     componentRef.current.controls = [
                                                                         <i className="fi-rr-check rounded-full bg-green-500 w-10 aspect-square flex items-center justify-center cursor-pointer"
@@ -1253,82 +1207,185 @@
                                                                                 setComponentState({ ...componentRef.current });
                                                                             }}></i>,
                                                                     ]
-
-
                                                                     componentRef.current.taskInfo.disableCanvas = false;
-                                                                    canvasAPI.current.exitDrawMaskMode();
                                                                     setComponentState({ ...componentRef.current });
                                                                 } else {
                                                                     console.log('task cancelled. not updating');
                                                                 }
-
                                                             } catch (error) {
-                                                                window.notification('Failed AI Fill.');
+                                                                window.notification('Failed Background Remove.');
                                                                 console.log('Errored:', error);
-                                                                componentRef.current.taskInfo = null;
-                                                                componentRef.current.extraControlsOpen = false;
-                                                                componentRef.current.controls = [];
-                                                                canvasAPI.current.exitDrawMaskMode();
-                                                                setComponentState({ ...componentRef.current });
-
                                                             }
+                                                        }}>
+                                                        <i className="fi-rr-copy-image"></i>
+                                                        <div className="text-xs">AI Remove</div>
+                                                    </button></>
+                                                );
+                                                setComponentState({ ...componentRef.current });
+                                                // let [result, cancel] = canvasAPI.current.bgRemoveTask();
+                                                // componentRef.current.taskInfo = { result, cancel };
+                                                // setComponentState({ ...componentRef.current });
+                                            }}>
+                                            <i className="fi-rr-copy-image"></i>
+                                            <div className="text-xs">Background Remove</div>
+                                        </button>
+                                    </SplideSlide>
 
-                                                        }}
-                                                        >
-                                                            <i className="flex fi-rr-paper-plane aspect-square items-center justify-center"   ></i>
-                                                            <div>Apply</div>
+                                    <SplideSlide>
+                                        <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'ai-fill' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
+                                            onClick={async () => {
+
+                                                componentRef.current.extraControlsOpen = true;
+                                                setComponentState({ ...componentRef.current });
+                                                if (componentRef.current.taskInfo) return console.log('some task already running');
+
+                                                // add apply/cancel controls
+                                                componentRef.current.taskInfo = {
+                                                    name: 'ai-fill', title: <div class="flex items-center"><div>AI Fill</div><div class="grow"></div><a class="underline text-sm text-red-500 cursor-pointer" onClick={() => {
+                                                        canvasAPI.current.exitDrawMaskMode();
+                                                        componentRef.current.extraControlsOpen = false;
+                                                        componentRef.current.controls = [];
+                                                        componentRef.current.taskInfo = null;
+                                                        setComponentState({ ...componentRef.current });
+                                                    }}>Cancel</a></div>
+                                                };
+                                                setComponentState({ ...componentRef.current });
+                                                componentRef.current.extraControlsOpen = true;
+                                                let Comp = () => {
+                                                    useEffect(() => { if ((componentRef.current.maskDrawMode || 'On') == 'On') canvasAPI.current.drawMaskMode(); else canvasAPI.current.exitDrawMaskMode(); }, []);
+
+                                                    return (<div className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name == 'ai-fill' && componentRef.current.taskInfo.subTasks?.includes('ai-fill-prompt') ? 'pointer-events-none opacity-50' : ''} w-full flex flex-col items-start gap-2`}>
+                                                        <div class="text-lg font-bold">Prompt</div>
+                                                        <div class="flex gap-2 w-full">
+                                                            <input id="prompt-input" type="text" className="grow h-10 px-2 rounded bg-neutral-200 dark:bg-neutral-800 placeholder:text-gray-500" placeholder="Prompt..." />
+                                                            <div className={`${componentRef.current.maskDrawMode == 'Off' ? 'pointer-events-none opacity-50' : ''} flex items-center gap-2 rounded bg-blue-500 px-2 cursor-pointer text-white`} onClick={async () => {
+                                                                try {
+                                                                    let taskId = uuid();
+
+                                                                    let prompt = document.querySelector('#prompt-input').value;
+                                                                    let mask = await canvasAPI.current.getDrawnMask();
+                                                                    let composite = await imprintOnImage(canvasAPI.current.componentRef.current.image, mask);
+                                                                    console.image(canvasAPI.current.componentRef.current.image.src);
+                                                                    console.image(mask.src);
+                                                                    console.image(composite.src);
+
+                                                                    componentRef.current.taskInfo.disableCanvas = true;
+                                                                    componentRef.current.taskInfo.subTasks = ['ai-fill-prompt'];
+                                                                    componentRef.current.taskInfo.taskId = taskId;
+                                                                    setComponentState({ ...componentRef.current });
+
+                                                                    console.log('started ai fill');
+                                                                    let start = Date.now();
+                                                                    let result = await ImageAPI.aiFill(canvasAPI.current.componentRef.current.image, mask, composite, prompt);
+                                                                    console.log('done ai fill', Date.now() - start, 'ms');
+
+                                                                    if (taskId == componentRef.current.taskInfo?.taskId) {
+
+                                                                        console.log('result', result, result?.src);
+                                                                        if (!result) throw new Error('Failed AI Fill. Result is null');
+                                                                        result = await alterResolution(result, canvasAPI.current.componentRef.current.image.width, canvasAPI.current.componentRef.current.image.height);
+                                                                        console.image(result);
+                                                                        // might have thrown so catch
+
+                                                                        canvasAPI.current.setImage(result);
+
+                                                                        componentRef.current.controls = [
+                                                                            <i className="fi-rr-check rounded-full bg-green-500 w-10 aspect-square flex items-center justify-center cursor-pointer"
+                                                                                onClick={() => {
+                                                                                    canvasAPI.current.exitDrawMaskMode();
+                                                                                    canvasAPI.current.applyChanges();
+                                                                                    componentRef.current.extraControlsOpen = false;
+                                                                                    componentRef.current.controls = [];
+                                                                                    componentRef.current.taskInfo = null;
+                                                                                    setComponentState({ ...componentRef.current });
+                                                                                }}></i>,
+                                                                            <i className="fi-rr-cross rounded-full bg-red-500 w-10 aspect-square flex items-center justify-center cursor-pointer"
+                                                                                onClick={() => {
+                                                                                    canvasAPI.current.exitDrawMaskMode();
+                                                                                    canvasAPI.current.discardChanges();
+                                                                                    componentRef.current.extraControlsOpen = false;
+                                                                                    componentRef.current.controls = [];
+                                                                                    componentRef.current.taskInfo = null;
+                                                                                    setComponentState({ ...componentRef.current });
+                                                                                }}></i>,
+                                                                        ]
+
+
+                                                                        componentRef.current.taskInfo.disableCanvas = false;
+                                                                        canvasAPI.current.exitDrawMaskMode();
+                                                                        setComponentState({ ...componentRef.current });
+                                                                    } else {
+                                                                        console.log('task cancelled. not updating');
+                                                                    }
+
+                                                                } catch (error) {
+                                                                    window.notification('Failed AI Fill.');
+                                                                    console.log('Errored:', error);
+                                                                    componentRef.current.taskInfo = null;
+                                                                    componentRef.current.extraControlsOpen = false;
+                                                                    componentRef.current.controls = [];
+                                                                    canvasAPI.current.exitDrawMaskMode();
+                                                                    setComponentState({ ...componentRef.current });
+
+                                                                }
+
+                                                            }}
+                                                            >
+                                                                <i className="flex fi-rr-paper-plane aspect-square items-center justify-center"   ></i>
+                                                                <div>Apply</div>
+                                                            </div>
+
                                                         </div>
 
-                                                    </div>
+
+                                                        <div class="text-lg font-bold">Mask Draw Mode</div>
+                                                        <div class="w-full flex gap-2">
+                                                            {['On', 'Off'].map((tab) => (
+                                                                <Chip
+                                                                    text={tab}
+                                                                    selected={(componentRef.current.maskDrawMode || 'On') === tab}
+                                                                    setSelected={(x) => {
+                                                                        componentRef.current.maskDrawMode = tab;
+                                                                        setComponentState({ ...componentRef.current });
+                                                                        if (x == 'Off') canvasAPI.current.exitDrawMaskMode();
+                                                                        else canvasAPI.current.drawMaskMode();
+                                                                    }}
+                                                                    key={tab}
+                                                                />
+                                                            ))}
+                                                        </div>
 
 
-                                                    <div class="text-lg font-bold">Mask Draw Mode</div>
-                                                    <div class="w-full flex gap-2">
-                                                        {['On', 'Off'].map((tab) => (
-                                                            <Chip
-                                                                text={tab}
-                                                                selected={(componentRef.current.maskDrawMode || 'On') === tab}
-                                                                setSelected={(x) => {
-                                                                    componentRef.current.maskDrawMode = tab;
-                                                                    setComponentState({ ...componentRef.current });
-                                                                    if (x == 'Off') canvasAPI.current.exitDrawMaskMode();
-                                                                    else canvasAPI.current.drawMaskMode();
-                                                                }}
-                                                                key={tab}
-                                                            />
-                                                        ))}
-                                                    </div>
+                                                        <div class="text-lg font-bold">Stroke Width</div>
+                                                        <div class="w-full flex gap-2">
+                                                            <input type="range" min="1" max="300" value={componentRef.current.strokeWidth} class="w-full" onChange={(e) => {
+                                                                canvasAPI.current.setStrokeWidth(e.target.value);
+                                                                componentRef.current.strokeWidth = e.target.value;
+                                                                setComponentState({ ...componentRef.current });
+                                                            }} />
+                                                            <div class="">{componentRef.current.strokeWidth}px</div>
+                                                        </div>
 
 
-                                                    <div class="text-lg font-bold">Stroke Width</div>
-                                                    <div class="w-full flex gap-2">
-                                                        <input type="range" min="1" max="300" value={componentRef.current.strokeWidth} class="w-full" onChange={(e) => {
-                                                            canvasAPI.current.setStrokeWidth(e.target.value);
-                                                            componentRef.current.strokeWidth = e.target.value;
-                                                            setComponentState({ ...componentRef.current });
-                                                        }} />
-                                                        <div class="">{componentRef.current.strokeWidth}px</div>
-                                                    </div>
+                                                    </div>)
+                                                };
+                                                componentRef.current.extraControls = Comp;
+                                                setComponentState({ ...componentRef.current });
 
-
-                                                </div>)
-                                            };
-                                            componentRef.current.extraControls = Comp;
-                                            setComponentState({ ...componentRef.current });
-
-                                        }}>
-                                        <i class="fi-rr-sparkles"></i>
-                                        <div className="text-xs">AI Fill</div>
-                                    </button>
-                                </SwiperSlide>
-                                <SwiperSlide>
-                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'filters' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
-                                        onClick={async () => { window.notification('Not Implemented') }}>
-                                        <i className="fi-rr-resize"></i>
-                                        <div className="text-xs">Crop & Resize</div>
-                                    </button>
-                                </SwiperSlide>
-                            </Swiper>
+                                            }}>
+                                            <i class="fi-rr-sparkles"></i>
+                                            <div className="text-xs">AI Fill</div>
+                                        </button>
+                                    </SplideSlide>
+                                    <SplideSlide>
+                                        <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'filters' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
+                                            onClick={async () => { window.notification('Not Implemented') }}>
+                                            <i className="fi-rr-resize"></i>
+                                            <div className="text-xs">Crop & Resize</div>
+                                        </button>
+                                    </SplideSlide>
+                                </SplideTrack>
+                            </Splide>
 
                         </div>
                     </div>
@@ -1373,37 +1430,69 @@
                     </h2>
                     <div className="mt-4 w-full h-96">
 
+
+
+
                         <Loader loading={componentRef.current.landingImagesLoaded < 50} >
                             <LoadOnce resolve={() => (
-                                <Swiper
-                                    spaceBetween={5}
-                                    slidesPerView={3}
-                                    grid={{ rows: 2, columns: 3 }}
-                                    modules={[Grid, Pagination]}
+                                <Splide
+                                    onMounted={(Splide) => {
+                                        // Splide.Components.Autoplay.play();
+                                    }}
+                                    hasTrack={false}
+                                    extensions={{ Grid }}
+                                    options={{
+                                        type: 'loop',
+                                        perPage: 3,
+                                        perMove: 1,
+                                        autoplay: true,
+                                        interval: 2000,
+                                        gap: '0.5rem',
+                                        pagination: 0,
+                                        arrows: 2,
+                                        grid: {
+                                            rows: 2,
+                                            cols: 1,
+                                            gap: {
+                                                row: '0.5rem',
+                                                col: '0.5rem',
+                                            },
+                                        },
+                                    }}
                                 >
-                                    {Array.from({ length: 50 }).map((img, i) => (
-                                        <SwiperSlide>
-                                            <img key={i} ref={(el) => {
-                                                if (!el) return;
-                                                let interval = setInterval(function () {
-                                                    if (el.complete) {
-                                                        clearInterval(interval);
-                                                        componentRef.current.landingImagesLoaded++;
+                                    <div className="splide__arrows">
+                                        <div className="splide__arrow splide__arrow--prev left-0 -translate-x-full w-auto bg-transparent top-1/2 -translate-y-1/2">
+                                            <i className="fi-rr-angle-left flex scale-y-150"></i>
+                                        </div>
+                                        <div className="splide__arrow splide__arrow--next right-0 translate-x-full w-auto bg-transparent top-1/2 -translate-y-1/2">
+                                            <i className="fi-rr-angle-right flex scale-y-150"></i>
+                                        </div>
+                                    </div>
+                                    <SplideTrack>
+                                        {Array.from({ length: 50 }).map((img, i) => (
+                                            <SplideSlide>
+                                                <img key={i} ref={(el) => {
+                                                    if (!el) return;
+                                                    let interval = setInterval(function () {
+                                                        if (el.complete) {
+                                                            clearInterval(interval);
+                                                            componentRef.current.landingImagesLoaded++;
+                                                            setComponentState({ ...componentRef.current });
+                                                        }
+                                                    }, 500);
+
+                                                }} className="p-1 h-full aspect-video cursor-pointer" src={`https://picsum.photos/seed/${Math.random()}/200/300`} alt=""
+                                                    onClick={async (e) => {
+                                                        componentRef.current.image = await getImageFromURL(e.target.src);
+                                                        componentRef.current.processState = ProcessState.EDIT;
                                                         setComponentState({ ...componentRef.current });
-                                                    }
-                                                }, 500);
+                                                    }}
+                                                />
+                                            </SplideSlide>
+                                        ))}
 
-                                            }} className="p-1 h-full aspect-video cursor-pointer" src={`https://picsum.photos/seed/${Math.random()}/200/300`} alt=""
-                                                onClick={async (e) => {
-                                                    componentRef.current.image = await getImageFromURL(e.target.src);
-                                                    componentRef.current.processState = ProcessState.EDIT;
-                                                    setComponentState({ ...componentRef.current });
-                                                }}
-                                            />
-                                        </SwiperSlide>
-                                    ))}
-
-                                </Swiper>
+                                    </SplideTrack>
+                                </Splide>
                             )
                             }></LoadOnce>
                         </Loader>
