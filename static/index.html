@@ -72,7 +72,7 @@
     // const { Grid, Pagination } = swiperModules;
 
     const { useState, useMemo, useEffect, createContext, useContext, useRef } = React;
-    const { HashRouter, Route, Routes, Redirect, useHistory, useLocation, Link } = reactRouter;
+    const { HashRouter, Route, Routes, Redirect, useHistory, useLocation, Link, useNavigate } = reactRouter;
     const { useDragControls, useMotionValue, useAnimate, motion, AnimatePresence } = framerMotion;
 
     let maxDimensions = { width: 500, height: 500 };
@@ -773,9 +773,43 @@
 
 
     function CustomCanvas(props) {
-        let componentRef = useRef({ step: 0, loading: false, image: props.image, strokeWidth: 50, editHistory: [] });
+        let componentRef = useRef({ step: 0, loading: false, image: null, strokeWidth: 50, editHistory: [] });
         let [componentState, setComponentState] = useState({ ...componentRef.current });
+        let divRef = useRef(null);
+        window.componentRef = componentRef;
+
+        useEffect(() => {
+            if (!divRef.current) return;
+
+        }, [divRef.current]);
+        useEffect(() => {
+            if (!props.image) return;
+            function outputsize() {
+                try {
+                    componentRef.current.stage?.height(divRef.current.offsetHeight);
+                    componentRef.current.stage?.width(divRef.current.offsetWidth);
+                } catch (error) {
+                    console.log(error);
+                }
+            }
+            outputsize();
+            new ResizeObserver(outputsize).observe(divRef.current);
+
+            (async () => {
+                await poll(() => divRef.current);
+                await initialSetup();
+                let scale = Math.max(props.image.width, props.image.height) / Math.max(maxDimensions.width, maxDimensions.height);
+                let altered = await alterResolution(props.image, props.image.width / scale, props.image.height / scale)
+                await setCanvasImage(props.image);
+            })();
+        }, [props.image]);
+
+
+
         async function setCanvasImage(image) {
+
+            componentRef.current.image = image;
+            setComponentState({ ...componentRef.current });
             // save to history
             if (componentRef.current.stage.find('#source-image')?.[0])
                 componentRef.current.editHistory.push({ image: componentRef.current.stage.find('#source-image')[0].image() });
@@ -812,8 +846,6 @@
                 setComponentState({ ...componentRef.current });
             },
             setImage(image) {
-                componentRef.current.image = image;
-                setComponentState({ ...componentRef.current });
                 setCanvasImage(image);
             },
             drawMaskMode() {
@@ -849,8 +881,6 @@
         props.canvasAPI.current.componentRef = componentRef;
         props.canvasAPI.current.setComponentState = setComponentState;
 
-        window.componentRef = componentRef;
-        let divRef = useRef(null);
         async function initialSetup() {
             window.divRef = divRef;
             let canvasContainer = document.querySelector('.konva-canvas');
@@ -964,28 +994,7 @@
 
             });
         }
-        useEffect(() => {
-            if (!divRef.current) return;
-            function outputsize() {
-                try {
-                    componentRef.current.stage?.height(divRef.current.offsetHeight);
-                    componentRef.current.stage?.width(divRef.current.offsetWidth);
-                } catch (error) {
-                    console.log(error);
-                }
-            }
-            outputsize();
-            new ResizeObserver(outputsize).observe(divRef.current);
 
-            (async () => {
-                await initialSetup();
-                let aspect = componentRef.current.image.width / componentRef.current.image.height;
-                let scale = Math.max(componentRef.current.image.width, componentRef.current.image.height) / Math.max(maxDimensions.width, maxDimensions.height);
-                componentRef.current.image = await alterResolution(props.image, componentRef.current.image.width / scale, componentRef.current.image.height / scale)
-                setComponentState({ ...componentRef.current });
-                await setCanvasImage(componentRef.current.image);
-            })();
-        }, [divRef.current]);
         return (
             <div className={`relative  w-full h-full shrink-0 ${componentState.loading ? ' loading overflow-hidden ' : ''}`}
                 ref={divRef}>
@@ -1046,6 +1055,122 @@
             </motion.div>
         );
     };
+    function MainPage() {
+
+        return (
+            <motion.div
+                // initial={{ opacity: 0, x: "-100%" }}
+                // animate={{ opacity: 1, x: 0 }}
+                // exit={{ opacity: 0, x: "-100%" }}
+                // transition={{ duration: 0.5, ease: "easeOut" }}
+                className="h-full p-4 flex flex-col items-start overflow-auto">
+                <h2 class="mt-4 text-2xl font-medium text-gray-900 dark:text-white text-center w-full">
+                    Pick an image
+                </h2>
+                <div class="mt-4 w-full relative border-2 border-gray-300 dark:border-gray-700 border-dashed rounded-lg p-4 dark:bg-neutral-800 cursor-pointer" id="dropzone">
+                    <div class="text-center" onClick={async () => {
+                        globalRef.current.image = await getImageFromURL(URL.createObjectURL(await getFileUpload()));
+                        setGlobalState({ ...globalRef.current });
+                        window.navigate('editor');
+                    }} >
+                        <img class="mx-auto h-12 w-12 dark:invert" src="https://www.svgrepo.com/show/357902/image-upload.svg" alt="" />
+                        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+                            <label for="file-upload" class="relative cursor-pointer">
+                                <span>Drag and drop</span>
+                                <span class="text-indigo-600 dark:text-indigo-300"> or browse </span>
+                                <span>to upload</span>
+                                <input id="file-upload" name="file-upload" type="file" class="sr-only" />
+                            </label>
+                        </h3>
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            PNG, JPG, GIF up to 10MB
+                        </p>
+                    </div>
+                </div>
+                <button class="mt-4 w-full flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white dark:bg-gray-700 dark:hover:bg-gray-600 dark:focus:ring-gray-900 dark:focus:ring-2 dark:focus:ring-offset-2 dark:focus:ring-offset-gray-800 bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" onClick={async () => {
+                    globalRef.current.image = await getImageFromURL(URL.createObjectURL(await getFileUpload()));
+                    setGlobalState({ ...globalRef.current });
+                    window.navigate('editor');
+                }} >
+                    Upload
+                </button>
+                <h2 class="mt-6 text-2xl font-medium text-gray-900 dark:text-white text-center w-full">
+                    Or choose one of the examples
+                </h2>
+                <div className="mt-4 w-full h-96">
+
+
+
+
+                    <Loader loading={(globalRef.current.landingImagesLoaded || 0) < 50} >
+                        <LoadOnce resolve={() => (
+                            <Splide
+                                onMounted={(Splide) => {
+                                    // Splide.Components.Autoplay.play();
+                                }}
+                                hasTrack={false}
+                                extensions={{ Grid }}
+                                options={{
+                                    type: 'loop',
+                                    perPage: 3,
+                                    perMove: 1,
+                                    autoplay: true,
+                                    interval: 2000,
+                                    gap: '0.5rem',
+                                    pagination: 0,
+                                    arrows: 2,
+                                    grid: {
+                                        rows: 2,
+                                        cols: 1,
+                                        gap: {
+                                            row: '0.5rem',
+                                            col: '0.5rem',
+                                        },
+                                    },
+                                }}
+                            >
+                                <div className="splide__arrows">
+                                    <div className="splide__arrow splide__arrow--prev left-0 -translate-x-full w-auto bg-transparent top-1/2 -translate-y-1/2">
+                                        <i className="fi-rr-angle-left flex scale-y-150"></i>
+                                    </div>
+                                    <div className="splide__arrow splide__arrow--next right-0 translate-x-full w-auto bg-transparent top-1/2 -translate-y-1/2">
+                                        <i className="fi-rr-angle-right flex scale-y-150"></i>
+                                    </div>
+                                </div>
+                                <SplideTrack>
+                                    {Array.from({ length: 50 }).map((img, i) => (
+                                        <SplideSlide>
+                                            <img key={i} ref={(el) => {
+                                                if (!el) return;
+                                                let interval = setInterval(function () {
+                                                    if (el.complete) {
+                                                        clearInterval(interval);
+                                                        globalRef.current.landingImagesLoaded = (globalRef.current.landingImagesLoaded || 0) + 1;
+                                                        setGlobalState({ ...globalRef.current });
+                                                    }
+                                                }, 500);
+
+                                            }} className="p-1 h-full aspect-video cursor-pointer object-cover" src={`https://picsum.photos/seed/${Math.random()}/600/600`} alt=""
+                                                onClick={async (e) => {
+                                                    globalRef.current.image = await getImageFromURL(e.target.src);
+                                                    setGlobalState({ ...globalRef.current });
+                                                    window.navigate('editor');
+                                                }}
+                                            />
+                                        </SplideSlide>
+                                    ))}
+
+                                </SplideTrack>
+                            </Splide>
+                        )
+                        }></LoadOnce>
+                    </Loader>
+
+                </div>
+            </motion.div>
+
+        )
+    }
     function EditPage() {
         let ProcessState = {
             START: 'START',
@@ -1062,130 +1187,237 @@
         let canvasAPI = useRef({ current: null });
 
         useEffect(() => {
-            if (!componentState.taskState) return;
+            if (!globalRef.current.image) return;
+            console.log('image changed');
+            componentRef.current.image = globalRef.current.image;
+            setComponentState({ ...componentRef.current });
+        }, [globalRef.current.image]);
+        return (
+            <motion.div
+                // initial={{ opacity: 0, x: "100%" }}
+                // animate={{ opacity: 1, x: 0 }}
+                // exit={{ opacity: 0, x: "100%" }}
+                // transition={{ duration: 0.5, ease: "easeOut" }}
+                className="flex flex-col items-start overflow-auto h-full">
+                <h2 class="p-4 text-2xl font-medium text-gray-900 dark:text-white w-full flex items-center gap-4">
+                    <i className="fi-rr-arrow-left cursor-pointer rounded-full hover:bg-neutral-500 w-10 aspect-square flex items-center justify-center" onClick={() => {
+                        navigate('/');
+                    }}></i>
+                    <div class="grow">{componentRef.current.taskInfo?.title || 'Edit'}</div>
+                </h2>
+                <div class="flex flex-col w-full h-full">
+                    <div class="grow">
+                        <Loader loading={componentRef.current.taskInfo?.disableCanvas} >
+                            <CustomCanvas image={componentRef.current.image} canvasAPI={canvasAPI} controls={componentRef.current.controls} />
+                        </Loader>
+                    </div>
+                    <DragCloseDrawer open={componentRef.current.extraControlsOpen} setOpen={(x) => { componentRef.current.extraControlsOpen = x; setComponentState({ ...componentRef.current }); }} >
+                        {<componentRef.current.extraControls />}
+                    </DragCloseDrawer>
 
-        });
-        if (componentState.processState == ProcessState.EDIT)
-            return (
-                <div className="flex flex-col items-start overflow-auto h-full">
-                    <h2 class="p-4 text-2xl font-medium text-gray-900 dark:text-white w-full flex items-center gap-4">
-                        <i className="fi-rr-arrow-left cursor-pointer rounded-full hover:bg-neutral-500 w-10 aspect-square flex items-center justify-center" onClick={() => {
-                            componentRef.current.processState = ProcessState.PICK_IMAGE;
-                            setComponentState({ ...componentRef.current });
-                        }}></i>
-                        <div class="grow">{componentRef.current.taskInfo?.title || 'Edit'}</div>
-                    </h2>
-                    <div class="flex flex-col w-full h-full">
-                        <div class="grow">
-                            <Loader loading={componentRef.current.taskInfo?.disableCanvas} >
-                                <CustomCanvas image={componentRef.current.image} canvasAPI={canvasAPI} controls={componentRef.current.controls} />
-                            </Loader>
-                        </div>
-                        <DragCloseDrawer open={componentRef.current.extraControlsOpen} setOpen={(x) => { componentRef.current.extraControlsOpen = x; setComponentState({ ...componentRef.current }); }} >
-                            {<componentRef.current.extraControls />}
-                        </DragCloseDrawer>
+                    <div class="w-full h-40 p-4 flex items-center justify-center">
 
-                        <div class="w-full h-40 p-4 flex items-center justify-center">
-
-                            <Splide
-                                onMounted={(Splide) => {
-                                    // Splide.Components.Autoplay.play();
-                                }}
-                                hasTrack={false}
-                                extensions={{ Grid }}
-                                options={{
-                                    width: '100%',
-                                    height: '100%',
-                                    perPage: 3,
-                                    perMove: 1,
-                                    gap: '1rem',
-                                    pagination: 0,
-                                    arrows: 2,
-                                    grid: {
-                                        rows: 2,
-                                        cols: 1,
-                                        gap: {
-                                            row: '1rem',
-                                            col: '1rem',
-                                        },
+                        <Splide
+                            onMounted={(Splide) => {
+                                // Splide.Components.Autoplay.play();
+                            }}
+                            hasTrack={false}
+                            extensions={{ Grid }}
+                            options={{
+                                width: '100%',
+                                height: '100%',
+                                perPage: 3,
+                                perMove: 1,
+                                gap: '1rem',
+                                pagination: 0,
+                                arrows: 2,
+                                grid: {
+                                    rows: 2,
+                                    cols: 1,
+                                    gap: {
+                                        row: '1rem',
+                                        col: '1rem',
                                     },
-                                }}
-                            >
-                                <div className="splide__arrows">
-                                    <div className="splide__arrow splide__arrow--prev left-0 -translate-x-full w-auto bg-transparent top-1/2 -translate-y-1/2">
-                                        <i className="fi-rr-angle-left flex scale-y-150"></i>
-                                    </div>
-                                    <div className="splide__arrow splide__arrow--next right-0 translate-x-full w-auto bg-transparent top-1/2 -translate-y-1/2">
-                                        <i className="fi-rr-angle-right flex scale-y-150"></i>
-                                    </div>
+                                },
+                            }}
+                        >
+                            <div className="splide__arrows">
+                                <div className="splide__arrow splide__arrow--prev left-0 -translate-x-full w-auto bg-transparent top-1/2 -translate-y-1/2">
+                                    <i className="fi-rr-angle-left flex scale-y-150"></i>
                                 </div>
+                                <div className="splide__arrow splide__arrow--next right-0 translate-x-full w-auto bg-transparent top-1/2 -translate-y-1/2">
+                                    <i className="fi-rr-angle-right flex scale-y-150"></i>
+                                </div>
+                            </div>
 
-                                <SplideTrack>
-                                    <SplideSlide>
-                                        <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'template' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
-                                            onClick={async () => { window.notification('Not Implemented') }}>
-                                            <i className="fi-rr-template"></i>
-                                            <div className="text-xs">Templates</div>
-                                        </button>
-                                    </SplideSlide>
-                                    <SplideSlide>
-                                        <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'text' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
-                                            onClick={async () => { window.notification('Not Implemented') }}>
-                                            <i className="fi-rr-text"></i>
-                                            <div className="text-xs">Text</div>
-                                        </button>
-                                    </SplideSlide>
-                                    <SplideSlide>
-                                        <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'filters' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
-                                            onClick={async () => { window.notification('Not Implemented') }}>
-                                            <i className="fi-rr-filter"></i>
-                                            <div className="text-xs">Filters</div>
-                                        </button>
-                                    </SplideSlide>
-                                    <SplideSlide>
-                                        <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'perspective' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
-                                            onClick={async () => { window.notification('Not Implemented') }}>
-                                            <i className="fi-rr-telescope"></i>
-                                            <div className="text-xs">Perspective</div>
-                                        </button>
-                                    </SplideSlide>
-                                    <SplideSlide>
-                                        <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'bg-remove' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
-                                            onClick={async () => {
-                                                componentRef.current.extraControlsOpen = true;
-                                                setComponentState({ ...componentRef.current });
-                                                if (componentRef.current.taskInfo) return console.log('some task already running');
-                                                componentRef.current.taskInfo = {
-                                                    name: 'bg-remove', title: <div class="flex items-center"><div>Background Remove</div><div class="grow"></div><a class="underline text-sm text-red-500 cursor-pointer" onClick={() => {
-                                                        canvasAPI.current.exitDrawMaskMode();
-                                                        componentRef.current.extraControlsOpen = false;
-                                                        componentRef.current.controls = [];
-                                                        componentRef.current.taskInfo = null;
-                                                        setComponentState({ ...componentRef.current });
-                                                    }}>Cancel</a></div>
-                                                };
-                                                componentRef.current.extraControlsOpen = true;
-                                                componentRef.current.extraControls = () => (
-                                                    <><button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name == 'bg-remove' && componentRef.current.taskInfo.subTasks?.includes('ai-bg-remove') ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
-                                                        onClick={async () => {
+                            <SplideTrack>
+                                <SplideSlide>
+                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'template' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
+                                        onClick={async () => { window.notification('Not Implemented') }}>
+                                        <i className="fi-rr-template"></i>
+                                        <div className="text-xs">Templates</div>
+                                    </button>
+                                </SplideSlide>
+                                <SplideSlide>
+                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'text' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
+                                        onClick={async () => { window.notification('Not Implemented') }}>
+                                        <i className="fi-rr-text"></i>
+                                        <div className="text-xs">Text</div>
+                                    </button>
+                                </SplideSlide>
+                                <SplideSlide>
+                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'filters' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
+                                        onClick={async () => { window.notification('Not Implemented') }}>
+                                        <i className="fi-rr-filter"></i>
+                                        <div className="text-xs">Filters</div>
+                                    </button>
+                                </SplideSlide>
+                                <SplideSlide>
+                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'perspective' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
+                                        onClick={async () => { window.notification('Not Implemented') }}>
+                                        <i className="fi-rr-telescope"></i>
+                                        <div className="text-xs">Perspective</div>
+                                    </button>
+                                </SplideSlide>
+                                <SplideSlide>
+                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'bg-remove' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
+                                        onClick={async () => {
+                                            componentRef.current.extraControlsOpen = true;
+                                            setComponentState({ ...componentRef.current });
+                                            if (componentRef.current.taskInfo) return console.log('some task already running');
+                                            componentRef.current.taskInfo = {
+                                                name: 'bg-remove', title: <div class="flex items-center"><div>Background Remove</div><div class="grow"></div><a class="underline text-sm text-red-500 cursor-pointer" onClick={() => {
+                                                    canvasAPI.current.exitDrawMaskMode();
+                                                    componentRef.current.extraControlsOpen = false;
+                                                    componentRef.current.controls = [];
+                                                    componentRef.current.taskInfo = null;
+                                                    setComponentState({ ...componentRef.current });
+                                                }}>Cancel</a></div>
+                                            };
+                                            componentRef.current.extraControlsOpen = true;
+                                            componentRef.current.extraControls = () => (
+                                                <><button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name == 'bg-remove' && componentRef.current.taskInfo.subTasks?.includes('ai-bg-remove') ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
+                                                    onClick={async () => {
+                                                        try {
+                                                            let taskId = uuid();
+
+                                                            componentRef.current.taskInfo.disableCanvas = true;
+                                                            componentRef.current.taskInfo.taskId = taskId;
+                                                            componentRef.current.taskInfo.subTasks = ['ai-bg-remove'];
+                                                            setComponentState({ ...componentRef.current });
+
+                                                            console.log('started bg removal');
+                                                            let start = Date.now();
+                                                            let [resultImage, resultMask] = await ImageAPI.removeBg(canvasAPI.current.componentRef.current.image);
+                                                            console.log('done bg removal', Date.now() - start, 'ms');
+
+
+                                                            if (taskId == componentRef.current.taskInfo?.taskId) {
+
+                                                                if (resultImage) canvasAPI.current.setImage(resultImage);
+
+
+                                                                componentRef.current.controls = [
+                                                                    <i className="fi-rr-check rounded-full bg-green-500 w-10 aspect-square flex items-center justify-center cursor-pointer"
+                                                                        onClick={() => {
+                                                                            canvasAPI.current.exitDrawMaskMode();
+                                                                            canvasAPI.current.applyChanges();
+                                                                            componentRef.current.extraControlsOpen = false;
+                                                                            componentRef.current.controls = [];
+                                                                            componentRef.current.taskInfo = null;
+                                                                            setComponentState({ ...componentRef.current });
+                                                                        }}></i>,
+                                                                    <i className="fi-rr-cross rounded-full bg-red-500 w-10 aspect-square flex items-center justify-center cursor-pointer"
+                                                                        onClick={() => {
+                                                                            canvasAPI.current.exitDrawMaskMode();
+                                                                            canvasAPI.current.discardChanges();
+                                                                            componentRef.current.extraControlsOpen = false;
+                                                                            componentRef.current.controls = [];
+                                                                            componentRef.current.taskInfo = null;
+                                                                            setComponentState({ ...componentRef.current });
+                                                                        }}></i>,
+                                                                ]
+                                                                componentRef.current.taskInfo.disableCanvas = false;
+                                                                setComponentState({ ...componentRef.current });
+                                                            } else {
+                                                                console.log('task cancelled. not updating');
+                                                            }
+                                                        } catch (error) {
+                                                            window.notification('Failed Background Remove.');
+                                                            console.log('Errored:', error);
+                                                        }
+                                                    }}>
+                                                    <i className="fi-rr-copy-image"></i>
+                                                    <div className="text-xs">AI Remove</div>
+                                                </button></>
+                                            );
+                                            setComponentState({ ...componentRef.current });
+                                            // let [result, cancel] = canvasAPI.current.bgRemoveTask();
+                                            // componentRef.current.taskInfo = { result, cancel };
+                                            // setComponentState({ ...componentRef.current });
+                                        }}>
+                                        <i className="fi-rr-copy-image"></i>
+                                        <div className="text-xs">Background Remove</div>
+                                    </button>
+                                </SplideSlide>
+
+                                <SplideSlide>
+                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'ai-fill' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
+                                        onClick={async () => {
+
+                                            componentRef.current.extraControlsOpen = true;
+                                            setComponentState({ ...componentRef.current });
+                                            if (componentRef.current.taskInfo) return console.log('some task already running');
+
+                                            // add apply/cancel controls
+                                            componentRef.current.taskInfo = {
+                                                name: 'ai-fill', title: <div class="flex items-center"><div>AI Fill</div><div class="grow"></div><a class="underline text-sm text-red-500 cursor-pointer" onClick={() => {
+                                                    canvasAPI.current.exitDrawMaskMode();
+                                                    componentRef.current.extraControlsOpen = false;
+                                                    componentRef.current.controls = [];
+                                                    componentRef.current.taskInfo = null;
+                                                    setComponentState({ ...componentRef.current });
+                                                }}>Cancel</a></div>
+                                            };
+                                            setComponentState({ ...componentRef.current });
+                                            componentRef.current.extraControlsOpen = true;
+                                            let Comp = () => {
+                                                useEffect(() => { if ((componentRef.current.maskDrawMode || 'On') == 'On') canvasAPI.current.drawMaskMode(); else canvasAPI.current.exitDrawMaskMode(); }, []);
+
+                                                return (<div className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name == 'ai-fill' && componentRef.current.taskInfo.subTasks?.includes('ai-fill-prompt') ? 'pointer-events-none opacity-50' : ''} w-full flex flex-col items-start gap-2`}>
+                                                    <div class="text-lg font-bold">Prompt</div>
+                                                    <div class="flex gap-2 w-full">
+                                                        <input id="prompt-input" type="text" className="grow h-10 px-2 rounded bg-neutral-200 dark:bg-neutral-800 placeholder:text-gray-500" placeholder="Prompt..." />
+                                                        <div className={`${componentRef.current.maskDrawMode == 'Off' ? 'pointer-events-none opacity-50' : ''} flex items-center gap-2 rounded bg-blue-500 px-2 cursor-pointer text-white`} onClick={async () => {
                                                             try {
                                                                 let taskId = uuid();
 
+                                                                let prompt = document.querySelector('#prompt-input').value;
+                                                                let mask = await canvasAPI.current.getDrawnMask();
+                                                                let composite = await imprintOnImage(canvasAPI.current.componentRef.current.image, mask);
+                                                                console.image(canvasAPI.current.componentRef.current.image.src);
+                                                                console.image(mask.src);
+                                                                console.image(composite.src);
+
                                                                 componentRef.current.taskInfo.disableCanvas = true;
+                                                                componentRef.current.taskInfo.subTasks = ['ai-fill-prompt'];
                                                                 componentRef.current.taskInfo.taskId = taskId;
-                                                                componentRef.current.taskInfo.subTasks = ['ai-bg-remove'];
                                                                 setComponentState({ ...componentRef.current });
 
-                                                                console.log('started bg removal');
+                                                                console.log('started ai fill');
                                                                 let start = Date.now();
-                                                                let [resultImage, resultMask] = await ImageAPI.removeBg(canvasAPI.current.componentRef.current.image);
-                                                                console.log('done bg removal', Date.now() - start, 'ms');
-
+                                                                let result = await ImageAPI.aiFill(canvasAPI.current.componentRef.current.image, mask, composite, prompt);
+                                                                console.log('done ai fill', Date.now() - start, 'ms');
 
                                                                 if (taskId == componentRef.current.taskInfo?.taskId) {
 
-                                                                    if (resultImage) canvasAPI.current.setImage(resultImage);
+                                                                    console.log('result', result, result?.src);
+                                                                    if (!result) throw new Error('Failed AI Fill. Result is null');
+                                                                    result = await alterResolution(result, canvasAPI.current.componentRef.current.image.width, canvasAPI.current.componentRef.current.image.height);
+                                                                    console.image(result);
+                                                                    // might have thrown so catch
 
+                                                                    canvasAPI.current.setImage(result);
 
                                                                     componentRef.current.controls = [
                                                                         <i className="fi-rr-check rounded-full bg-green-500 w-10 aspect-square flex items-center justify-center cursor-pointer"
@@ -1207,300 +1439,90 @@
                                                                                 setComponentState({ ...componentRef.current });
                                                                             }}></i>,
                                                                     ]
+
+
                                                                     componentRef.current.taskInfo.disableCanvas = false;
+                                                                    canvasAPI.current.exitDrawMaskMode();
                                                                     setComponentState({ ...componentRef.current });
                                                                 } else {
                                                                     console.log('task cancelled. not updating');
                                                                 }
+
                                                             } catch (error) {
-                                                                window.notification('Failed Background Remove.');
+                                                                window.notification('Failed AI Fill.');
                                                                 console.log('Errored:', error);
-                                                            }
-                                                        }}>
-                                                        <i className="fi-rr-copy-image"></i>
-                                                        <div className="text-xs">AI Remove</div>
-                                                    </button></>
-                                                );
-                                                setComponentState({ ...componentRef.current });
-                                                // let [result, cancel] = canvasAPI.current.bgRemoveTask();
-                                                // componentRef.current.taskInfo = { result, cancel };
-                                                // setComponentState({ ...componentRef.current });
-                                            }}>
-                                            <i className="fi-rr-copy-image"></i>
-                                            <div className="text-xs">Background Remove</div>
-                                        </button>
-                                    </SplideSlide>
-
-                                    <SplideSlide>
-                                        <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'ai-fill' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
-                                            onClick={async () => {
-
-                                                componentRef.current.extraControlsOpen = true;
-                                                setComponentState({ ...componentRef.current });
-                                                if (componentRef.current.taskInfo) return console.log('some task already running');
-
-                                                // add apply/cancel controls
-                                                componentRef.current.taskInfo = {
-                                                    name: 'ai-fill', title: <div class="flex items-center"><div>AI Fill</div><div class="grow"></div><a class="underline text-sm text-red-500 cursor-pointer" onClick={() => {
-                                                        canvasAPI.current.exitDrawMaskMode();
-                                                        componentRef.current.extraControlsOpen = false;
-                                                        componentRef.current.controls = [];
-                                                        componentRef.current.taskInfo = null;
-                                                        setComponentState({ ...componentRef.current });
-                                                    }}>Cancel</a></div>
-                                                };
-                                                setComponentState({ ...componentRef.current });
-                                                componentRef.current.extraControlsOpen = true;
-                                                let Comp = () => {
-                                                    useEffect(() => { if ((componentRef.current.maskDrawMode || 'On') == 'On') canvasAPI.current.drawMaskMode(); else canvasAPI.current.exitDrawMaskMode(); }, []);
-
-                                                    return (<div className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name == 'ai-fill' && componentRef.current.taskInfo.subTasks?.includes('ai-fill-prompt') ? 'pointer-events-none opacity-50' : ''} w-full flex flex-col items-start gap-2`}>
-                                                        <div class="text-lg font-bold">Prompt</div>
-                                                        <div class="flex gap-2 w-full">
-                                                            <input id="prompt-input" type="text" className="grow h-10 px-2 rounded bg-neutral-200 dark:bg-neutral-800 placeholder:text-gray-500" placeholder="Prompt..." />
-                                                            <div className={`${componentRef.current.maskDrawMode == 'Off' ? 'pointer-events-none opacity-50' : ''} flex items-center gap-2 rounded bg-blue-500 px-2 cursor-pointer text-white`} onClick={async () => {
-                                                                try {
-                                                                    let taskId = uuid();
-
-                                                                    let prompt = document.querySelector('#prompt-input').value;
-                                                                    let mask = await canvasAPI.current.getDrawnMask();
-                                                                    let composite = await imprintOnImage(canvasAPI.current.componentRef.current.image, mask);
-                                                                    console.image(canvasAPI.current.componentRef.current.image.src);
-                                                                    console.image(mask.src);
-                                                                    console.image(composite.src);
-
-                                                                    componentRef.current.taskInfo.disableCanvas = true;
-                                                                    componentRef.current.taskInfo.subTasks = ['ai-fill-prompt'];
-                                                                    componentRef.current.taskInfo.taskId = taskId;
-                                                                    setComponentState({ ...componentRef.current });
-
-                                                                    console.log('started ai fill');
-                                                                    let start = Date.now();
-                                                                    let result = await ImageAPI.aiFill(canvasAPI.current.componentRef.current.image, mask, composite, prompt);
-                                                                    console.log('done ai fill', Date.now() - start, 'ms');
-
-                                                                    if (taskId == componentRef.current.taskInfo?.taskId) {
-
-                                                                        console.log('result', result, result?.src);
-                                                                        if (!result) throw new Error('Failed AI Fill. Result is null');
-                                                                        result = await alterResolution(result, canvasAPI.current.componentRef.current.image.width, canvasAPI.current.componentRef.current.image.height);
-                                                                        console.image(result);
-                                                                        // might have thrown so catch
-
-                                                                        canvasAPI.current.setImage(result);
-
-                                                                        componentRef.current.controls = [
-                                                                            <i className="fi-rr-check rounded-full bg-green-500 w-10 aspect-square flex items-center justify-center cursor-pointer"
-                                                                                onClick={() => {
-                                                                                    canvasAPI.current.exitDrawMaskMode();
-                                                                                    canvasAPI.current.applyChanges();
-                                                                                    componentRef.current.extraControlsOpen = false;
-                                                                                    componentRef.current.controls = [];
-                                                                                    componentRef.current.taskInfo = null;
-                                                                                    setComponentState({ ...componentRef.current });
-                                                                                }}></i>,
-                                                                            <i className="fi-rr-cross rounded-full bg-red-500 w-10 aspect-square flex items-center justify-center cursor-pointer"
-                                                                                onClick={() => {
-                                                                                    canvasAPI.current.exitDrawMaskMode();
-                                                                                    canvasAPI.current.discardChanges();
-                                                                                    componentRef.current.extraControlsOpen = false;
-                                                                                    componentRef.current.controls = [];
-                                                                                    componentRef.current.taskInfo = null;
-                                                                                    setComponentState({ ...componentRef.current });
-                                                                                }}></i>,
-                                                                        ]
-
-
-                                                                        componentRef.current.taskInfo.disableCanvas = false;
-                                                                        canvasAPI.current.exitDrawMaskMode();
-                                                                        setComponentState({ ...componentRef.current });
-                                                                    } else {
-                                                                        console.log('task cancelled. not updating');
-                                                                    }
-
-                                                                } catch (error) {
-                                                                    window.notification('Failed AI Fill.');
-                                                                    console.log('Errored:', error);
-                                                                    componentRef.current.taskInfo = null;
-                                                                    componentRef.current.extraControlsOpen = false;
-                                                                    componentRef.current.controls = [];
-                                                                    canvasAPI.current.exitDrawMaskMode();
-                                                                    setComponentState({ ...componentRef.current });
-
-                                                                }
-
-                                                            }}
-                                                            >
-                                                                <i className="flex fi-rr-paper-plane aspect-square items-center justify-center"   ></i>
-                                                                <div>Apply</div>
-                                                            </div>
-
-                                                        </div>
-
-
-                                                        <div class="text-lg font-bold">Mask Draw Mode</div>
-                                                        <div class="w-full flex gap-2">
-                                                            {['On', 'Off'].map((tab) => (
-                                                                <Chip
-                                                                    text={tab}
-                                                                    selected={(componentRef.current.maskDrawMode || 'On') === tab}
-                                                                    setSelected={(x) => {
-                                                                        componentRef.current.maskDrawMode = tab;
-                                                                        setComponentState({ ...componentRef.current });
-                                                                        if (x == 'Off') canvasAPI.current.exitDrawMaskMode();
-                                                                        else canvasAPI.current.drawMaskMode();
-                                                                    }}
-                                                                    key={tab}
-                                                                />
-                                                            ))}
-                                                        </div>
-
-
-                                                        <div class="text-lg font-bold">Stroke Width</div>
-                                                        <div class="w-full flex gap-2">
-                                                            <input type="range" min="1" max="300" value={componentRef.current.strokeWidth} class="w-full" onChange={(e) => {
-                                                                canvasAPI.current.setStrokeWidth(e.target.value);
-                                                                componentRef.current.strokeWidth = e.target.value;
+                                                                componentRef.current.taskInfo = null;
+                                                                componentRef.current.extraControlsOpen = false;
+                                                                componentRef.current.controls = [];
+                                                                canvasAPI.current.exitDrawMaskMode();
                                                                 setComponentState({ ...componentRef.current });
-                                                            }} />
-                                                            <div class="">{componentRef.current.strokeWidth}px</div>
+
+                                                            }
+
+                                                        }}
+                                                        >
+                                                            <i className="flex fi-rr-paper-plane aspect-square items-center justify-center"   ></i>
+                                                            <div>Apply</div>
                                                         </div>
 
-
-                                                    </div>)
-                                                };
-                                                componentRef.current.extraControls = Comp;
-                                                setComponentState({ ...componentRef.current });
-
-                                            }}>
-                                            <i class="fi-rr-sparkles"></i>
-                                            <div className="text-xs">AI Fill</div>
-                                        </button>
-                                    </SplideSlide>
-                                    <SplideSlide>
-                                        <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'filters' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
-                                            onClick={async () => { window.notification('Not Implemented') }}>
-                                            <i className="fi-rr-resize"></i>
-                                            <div className="text-xs">Crop & Resize</div>
-                                        </button>
-                                    </SplideSlide>
-                                </SplideTrack>
-                            </Splide>
-
-                        </div>
-                    </div>
-                </div >
-            )
-
-        if (componentState.processState == ProcessState.PICK_IMAGE)
-            return (
-                <div className="h-full p-4 flex flex-col items-start overflow-auto">
-                    <h2 class="mt-4 text-2xl font-medium text-gray-900 dark:text-white text-center w-full">
-                        Pick an image
-                    </h2>
-                    <div class="mt-4 w-full relative border-2 border-gray-300 dark:border-gray-700 border-dashed rounded-lg p-4 dark:bg-neutral-800 cursor-pointer" id="dropzone">
-                        <div class="text-center" onClick={async () => {
-                            componentRef.current.image = await getImageFromURL(URL.createObjectURL(await getFileUpload()));
-                            componentRef.current.processState = ProcessState.EDIT;
-                            setComponentState({ ...componentRef.current });
-                        }} >
-                            <img class="mx-auto h-12 w-12 dark:invert" src="https://www.svgrepo.com/show/357902/image-upload.svg" alt="" />
-                            <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">
-                                <label for="file-upload" class="relative cursor-pointer">
-                                    <span>Drag and drop</span>
-                                    <span class="text-indigo-600 dark:text-indigo-300"> or browse </span>
-                                    <span>to upload</span>
-                                    <input id="file-upload" name="file-upload" type="file" class="sr-only" />
-                                </label>
-                            </h3>
-                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                PNG, JPG, GIF up to 10MB
-                            </p>
-                        </div>
-                    </div>
-                    <button class="mt-4 w-full flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white dark:bg-gray-700 dark:hover:bg-gray-600 dark:focus:ring-gray-900 dark:focus:ring-2 dark:focus:ring-offset-2 dark:focus:ring-offset-gray-800 bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" onClick={async () => {
-                        componentRef.current.image = await getImageFromURL(URL.createObjectURL(await getFileUpload()));
-                        componentRef.current.processState = ProcessState.EDIT;
-                        setComponentState({ ...componentRef.current });
-                    }} >
-                        Upload
-                    </button>
-                    <h2 class="mt-6 text-2xl font-medium text-gray-900 dark:text-white text-center w-full">
-                        Or choose one of the examples
-                    </h2>
-                    <div className="mt-4 w-full h-96">
+                                                    </div>
 
 
+                                                    <div class="text-lg font-bold">Mask Draw Mode</div>
+                                                    <div class="w-full flex gap-2">
+                                                        {['On', 'Off'].map((tab) => (
+                                                            <Chip
+                                                                text={tab}
+                                                                selected={(componentRef.current.maskDrawMode || 'On') === tab}
+                                                                setSelected={(x) => {
+                                                                    componentRef.current.maskDrawMode = tab;
+                                                                    setComponentState({ ...componentRef.current });
+                                                                    if (x == 'Off') canvasAPI.current.exitDrawMaskMode();
+                                                                    else canvasAPI.current.drawMaskMode();
+                                                                }}
+                                                                key={tab}
+                                                            />
+                                                        ))}
+                                                    </div>
 
 
-                        <Loader loading={componentRef.current.landingImagesLoaded < 50} >
-                            <LoadOnce resolve={() => (
-                                <Splide
-                                    onMounted={(Splide) => {
-                                        // Splide.Components.Autoplay.play();
-                                    }}
-                                    hasTrack={false}
-                                    extensions={{ Grid }}
-                                    options={{
-                                        type: 'loop',
-                                        perPage: 3,
-                                        perMove: 1,
-                                        autoplay: true,
-                                        interval: 2000,
-                                        gap: '0.5rem',
-                                        pagination: 0,
-                                        arrows: 2,
-                                        grid: {
-                                            rows: 2,
-                                            cols: 1,
-                                            gap: {
-                                                row: '0.5rem',
-                                                col: '0.5rem',
-                                            },
-                                        },
-                                    }}
-                                >
-                                    <div className="splide__arrows">
-                                        <div className="splide__arrow splide__arrow--prev left-0 -translate-x-full w-auto bg-transparent top-1/2 -translate-y-1/2">
-                                            <i className="fi-rr-angle-left flex scale-y-150"></i>
-                                        </div>
-                                        <div className="splide__arrow splide__arrow--next right-0 translate-x-full w-auto bg-transparent top-1/2 -translate-y-1/2">
-                                            <i className="fi-rr-angle-right flex scale-y-150"></i>
-                                        </div>
-                                    </div>
-                                    <SplideTrack>
-                                        {Array.from({ length: 50 }).map((img, i) => (
-                                            <SplideSlide>
-                                                <img key={i} ref={(el) => {
-                                                    if (!el) return;
-                                                    let interval = setInterval(function () {
-                                                        if (el.complete) {
-                                                            clearInterval(interval);
-                                                            componentRef.current.landingImagesLoaded++;
+                                                    <div class="text-lg font-bold">Stroke Width</div>
+                                                    <div class="w-full flex gap-2">
+                                                        <input type="range" min="1" max="300" value={componentRef.current.strokeWidth} class="w-full" onChange={(e) => {
+                                                            canvasAPI.current.setStrokeWidth(e.target.value);
+                                                            componentRef.current.strokeWidth = e.target.value;
                                                             setComponentState({ ...componentRef.current });
-                                                        }
-                                                    }, 500);
+                                                        }} />
+                                                        <div class="">{componentRef.current.strokeWidth}px</div>
+                                                    </div>
 
-                                                }} className="p-1 h-full aspect-video cursor-pointer" src={`https://picsum.photos/seed/${Math.random()}/600/600`} alt=""
-                                                    onClick={async (e) => {
-                                                        componentRef.current.image = await getImageFromURL(e.target.src);
-                                                        componentRef.current.processState = ProcessState.EDIT;
-                                                        setComponentState({ ...componentRef.current });
-                                                    }}
-                                                />
-                                            </SplideSlide>
-                                        ))}
 
-                                    </SplideTrack>
-                                </Splide>
-                            )
-                            }></LoadOnce>
-                        </Loader>
+                                                </div>)
+                                            };
+                                            componentRef.current.extraControls = Comp;
+                                            setComponentState({ ...componentRef.current });
+
+                                        }}>
+                                        <i class="fi-rr-sparkles"></i>
+                                        <div className="text-xs">AI Fill</div>
+                                    </button>
+                                </SplideSlide>
+                                <SplideSlide>
+                                    <button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name != 'filters' ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
+                                        onClick={async () => { window.notification('Not Implemented') }}>
+                                        <i className="fi-rr-resize"></i>
+                                        <div className="text-xs">Crop & Resize</div>
+                                    </button>
+                                </SplideSlide>
+                            </SplideTrack>
+                        </Splide>
 
                     </div>
                 </div>
+            </motion.div >
+        )
 
-            );
+
     }
     function LoadOnce({ resolve }) {
         let [x, setX] = useState(null);
@@ -1779,6 +1801,12 @@
 
     function App() {
         const [notifications, setNotifications] = useState([]);
+        const globalRef = useRef({ count: 1 });
+        const [globalState, setGlobalState] = useState({ ...globalRef.current });
+        window.globalRef = globalRef;
+        window.setGlobalState = setGlobalState;
+        const navigate = useNavigate();
+        window.navigate = navigate;
         const removeNotif = (id) => {
             setNotifications((pv) => pv.filter((n) => n.id !== id));
         };
@@ -1796,10 +1824,12 @@
                     </AnimatePresence>
                 </div>
                 <div className="min-h-full max-w-md mx-auto dark:shadow-[0_4px_10px_rgba(255,255,255,0.3)]">
-                    <Routes>
-                        <Route path="/landing" element={<EditPage />} />
-                        <Route path="/" element={<EditPage />} />
-                    </Routes>
+                    <AnimatePresence>
+                        <Routes>
+                            <Route path="/" element={<MainPage />} />
+                            <Route path="/editor" element={<EditPage />} />
+                        </Routes>
+                    </AnimatePresence>
                 </div>
             </div>
         );
