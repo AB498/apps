@@ -790,8 +790,8 @@
                 await poll(() => divRef.current);
                 function outputsize() {
                     try {
-                        componentRef.current.stage?.height(divRef.current.offsetHeight);
-                        componentRef.current.stage?.width(divRef.current.offsetWidth);
+                        componentRef.current.stage?.height(divRef.current?.offsetHeight);
+                        componentRef.current.stage?.width(divRef.current?.offsetWidth);
                     } catch (error) { console.log(error); }
                 }
                 outputsize();
