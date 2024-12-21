@@ -72,7 +72,7 @@
     // const { Grid, Pagination } = swiperModules;
 
     const { useState, useMemo, useEffect, createContext, useContext, useRef } = React;
-    const { HashRouter, Route, Routes, Redirect, useHistory, useLocation, Link, useNavigate } = reactRouter;
+    const { HashRouter, Route, Routes, Navigate, useHistory, useLocation, Link, useNavigate } = reactRouter;
     const { useDragControls, useMotionValue, useAnimate, motion, AnimatePresence } = framerMotion;
 
     let maxDimensions = { width: 500, height: 500 };
@@ -86,7 +86,7 @@
         useState, useMemo, useEffect, createContext, useContext, useRef,
         swiperModule, Splide, SwiperSlide, Grid,
         useDragControls, useMotionValue, useAnimate, motion, AnimatePresence,
-        HashRouter, Route, Routes, Redirect, useHistory, useLocation, Link,
+        HashRouter, Route, Routes, Navigate, useHistory, useLocation, Link,
         React, ReactDOMClient, framerMotion, gradio_client, reactRouter,
     };
     Object.entries(modules).forEach(([key, val]) => window[key] = val);
@@ -609,6 +609,10 @@
     async function getImageFromCanvas(canvas) {
         return await getImageFromURL(canvas.toDataURL("image/png"));
     }
+    async function drawOnCanvas(canvas, image) {
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(image, 0, 0);
+    }
     function getImageFromBlob(blob) {
         return new Promise((resolve, reject) => {
             let image = new Image(); // Create a new Image object
@@ -843,24 +847,30 @@
         let canvasAPI = {
             setStrokeWidth(width) {
                 componentRef.current.strokeWidth = width;
+                let stage = componentRef.current.stage;
+                let infoLayer = componentRef.current.stage.find('#info-layer')[0];
+                if (!stage) return;
+                if (componentRef.current.stage.find('#stroke-width-preview')?.[0]) componentRef.current.stage.find('#stroke-width-preview')[0].destroy();
+                let circ = new Konva.Circle({ width: width, height: width, id: 'stroke-width-preview', fill: 'red', opacity: 0.5 });
+                infoLayer.add(circ);
+                infoLayer.zIndex(componentRef.current.stage.getLayers().length);
+                infoLayer.zIndex(componentRef.current.stage.getLayers().length)
+                circ.absolutePosition({ x: stage.width() / 2, y: stage.height() / 2 });
+                if (componentRef.current.storeRemoveTimeout) clearTimeout(componentRef.current.storeRemoveTimeout);
+                componentRef.current.storeRemoveTimeout = setTimeout(() => {
+                    componentRef.current.stage.find('#stroke-width-preview')[0].destroy();
+                }, 1000);
                 setComponentState({ ...componentRef.current });
             },
             setImage(image) {
                 setCanvasImage(image);
             },
-            drawMaskMode() {
-                let cancelled = false; let cancel = () => { cancelled = true };
-                let result = (async () => {
-                    // get mask
-                    await enterMaskMode();
-                })();
-                return [result, cancel];
+            async drawMaskMode(addSubtract) {
+                await enterMaskMode(addSubtract);
             },
             exitDrawMaskMode() {
                 let aiFillMaskLayer = componentRef.current.stage.find('#ai-fill-mask-layer')?.[0];
-                if (aiFillMaskLayer) {
-                    aiFillMaskLayer.destroy();
-                }
+                aiFillMaskLayer.setAttrs({ visible: false });
             },
             async getDrawnMask() {
                 let img = componentRef.current.stage.find('#ai-fill-mask-image')?.[0].image(); // type canvas
@@ -890,18 +900,9 @@
                 width: divRef.current?.offsetWidth || 500,
                 height: divRef.current?.offsetHeight || 400
             });
-            componentRef.current.stage = stage;
-            setComponentState({ ...componentRef.current });
-            props.canvasAPI.current.stage = componentRef.current.stage;
-
-        }
-        async function enterMaskMode() {
-            let aiFillMaskLayer = componentRef.current.stage.find('#ai-fill-mask-layer')?.[0];
-            let aiFillMaskClipperGroup = componentRef.current.stage.find('#ai-fill-mask-clipper-group')?.[0];
-            if (aiFillMaskLayer) {
-                aiFillMaskLayer.destroy();
-            }
-            aiFillMaskLayer = new Konva.Layer({
+            let mainLayer = stage.find('#main-layer')?.[0] || new Konva.Layer({ id: 'main-layer' });
+            let infoLayer = stage.find('#info-layer')?.[0] || new Konva.Layer({ id: 'info-layer' });
+            let aiFillMaskLayer = new Konva.Layer({
                 id: 'ai-fill-mask-layer',
                 visible: true,
                 x: 0,
@@ -909,59 +910,74 @@
                 // width: componentRef.current.image.width,
                 // height: componentRef.current.image.height
             });
-
-            if (aiFillMaskClipperGroup) {
-                aiFillMaskClipperGroup.destroy();
-            }
-            aiFillMaskClipperGroup = new Konva.Group({
+            let aiFillMaskClipperGroup = new Konva.Group({
+                id: 'ai-fill-mask-clipper-group',
                 clip: {
-                    id: 'ai-fill-mask-clipper-group',
                     x: 0,
                     y: 0,
-                    width: componentRef.current.image.width,
-                    height: componentRef.current.image.height
+
                 }
             });
 
-            var canvas = document.createElement('canvas');
-            canvas.width = componentRef.current.image.width;
-            canvas.height = componentRef.current.image.height;
-            var context = canvas.getContext('2d');
-
-
-            var image = new Konva.Image({
+            let canvas = document.createElement('canvas');
+            let aiFillMaskImage = new Konva.Image({
                 id: 'ai-fill-mask-image',
                 image: canvas,
                 opacity: 0.5,
                 x: 0,
                 y: 0,
+            });
+            aiFillMaskLayer.add(aiFillMaskClipperGroup);
+            aiFillMaskClipperGroup.add(aiFillMaskImage);
+
+            stage.add(mainLayer);
+            stage.add(infoLayer);
+            stage.add(aiFillMaskLayer);
+
+            componentRef.current.stage = stage;
+            setComponentState({ ...componentRef.current });
+            props.canvasAPI.current.stage = componentRef.current.stage;
+
+        }
+        async function enterMaskMode(addSubtract) {
+
+
+
+            // aiFillMaskClipperGroup.add(new Konva.Rect({ width: componentRef.current.image.width, height: componentRef.current.image.height }));
+            // aiFillMaskClipperGroup.add(new Konva.Rect({ x: 0, y: 0, width: image.width(), height: image.height(), stroke: 'blue', strokeWidth: 20 }));
+            let aiFillMaskLayer = componentRef.current.stage.find('#ai-fill-mask-layer')[0];
+            aiFillMaskLayer.setAttrs({ visible: true });
+            aiFillMaskLayer.zIndex(componentRef.current.stage.getLayers().length);
+
+            let aiFillMaskClipperGroup = componentRef.current.stage.find('#ai-fill-mask-clipper-group')[0];
+            let aiFillMaskImage = componentRef.current.stage.find('#ai-fill-mask-image')[0];
+            let canvas = aiFillMaskImage.image();
+            let lastMask = await getImageFromCanvas(canvas);
+            canvas.width = componentRef.current.image.width;
+            canvas.height = componentRef.current.image.height;
+            aiFillMaskClipperGroup.setAttrs({
+                width: componentRef.current.image.width,
+                height: componentRef.current.image.height,
+            });
+            aiFillMaskImage.setAttrs({
                 width: componentRef.current.image.width,
                 height: componentRef.current.image.height,
             });
 
-            // aiFillMaskClipperGroup.add(new Konva.Rect({ width: componentRef.current.image.width, height: componentRef.current.image.height }));
-            // aiFillMaskClipperGroup.add(new Konva.Rect({ x: 0, y: 0, width: image.width(), height: image.height(), stroke: 'blue', strokeWidth: 20 }));
-            aiFillMaskClipperGroup.add(image);
-            aiFillMaskLayer.add(aiFillMaskClipperGroup);
-            aiFillMaskLayer.batchDraw();
-            componentRef.current.stage.add(aiFillMaskLayer);
+            await drawOnCanvas(canvas, lastMask);
+            let context = canvas.getContext('2d');
 
-            aiFillMaskLayer.on('mouseenter', function () {
-                componentRef.current.stage.container().style.cursor = 'crosshair';
-            });
-            aiFillMaskLayer.on('mouseleave', function () {
-                componentRef.current.stage.container().style.cursor = 'default';
-            });
 
             var isPaint = false;
             var lastPointerPosition = null;
-            var mode = 'brush';
 
             aiFillMaskLayer.off('mousedown touchstart mouseup touchend mousemove touchmove');
+
+            aiFillMaskLayer.on('mouseenter', function () { componentRef.current.stage.container().style.cursor = 'crosshair'; });
+            aiFillMaskLayer.on('mouseleave', function () { componentRef.current.stage.container().style.cursor = 'default'; });
+
             aiFillMaskLayer.on('mousedown touchstart', function (e) {
-                // aiFillMaskLayer.canvas.style.opacity = 0.5;
                 isPaint = true;
-                // let pos = componentRef.current.stage.getRelativePointerPosition();
                 lastPointerPosition = componentRef.current.stage.getRelativePointerPosition();
             });
 
@@ -975,12 +991,10 @@
                 if (!lastPointerPosition) return;
                 // prevent scrolling on touch devices
                 // e.evt.preventDefault();
-                context.globalCompositeOperation = 'source-over';
+                context.globalCompositeOperation = addSubtract == 1 ? 'source-over' : 'destination-out';
                 context.strokeStyle = '#ffffff';
                 context.lineJoin = 'round';
                 context.lineWidth = componentRef.current.strokeWidth;
-                // context.globalAlpha = 0.5;
-
                 context.beginPath();
                 context.moveTo(lastPointerPosition.x, lastPointerPosition.y);
                 let pos = componentRef.current.stage.getRelativePointerPosition();
@@ -1146,7 +1160,8 @@
                                                     if (el.complete) {
                                                         clearInterval(interval);
                                                         globalRef.current.landingImagesLoaded = (globalRef.current.landingImagesLoaded || 0) + 1;
-                                                        setGlobalState({ ...globalRef.current });
+                                                        if (globalRef.current.landingImagesLoaded >= 50)
+                                                            setGlobalState({ ...globalRef.current });
                                                     }
                                                 }, 500);
 
@@ -1188,10 +1203,12 @@
 
         useEffect(() => {
             if (!globalRef.current.image) return;
-            console.log('image changed');
             componentRef.current.image = globalRef.current.image;
             setComponentState({ ...componentRef.current });
         }, [globalRef.current.image]);
+
+        if (!globalRef.current.image) return <Navigate to="/" />
+
         return (
             <motion.div
                 // initial={{ opacity: 0, x: "100%" }}
@@ -1382,7 +1399,10 @@
                                             setComponentState({ ...componentRef.current });
                                             componentRef.current.extraControlsOpen = true;
                                             let Comp = () => {
-                                                useEffect(() => { if ((componentRef.current.maskDrawMode || 'On') == 'On') canvasAPI.current.drawMaskMode(); else canvasAPI.current.exitDrawMaskMode(); }, []);
+                                                useEffect(() => {
+                                                    if (componentRef.current.maskDrawMode == 'Off') canvasAPI.current.exitDrawMaskMode()
+                                                    else canvasAPI.current.drawMaskMode((componentRef.current.maskDrawMode || 'Add') == 'Subtract' ? -1 : 1);
+                                                }, []);
 
                                                 return (<div className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name == 'ai-fill' && componentRef.current.taskInfo.subTasks?.includes('ai-fill-prompt') ? 'pointer-events-none opacity-50' : ''} w-full flex flex-col items-start gap-2`}>
                                                     <div class="text-lg font-bold">Prompt</div>
@@ -1470,7 +1490,7 @@
 
                                                     <div class="text-lg font-bold">Mask Draw Mode</div>
                                                     <div class="w-full flex gap-2">
-                                                        {['On', 'Off'].map((tab) => (
+                                                        {['Add', 'Subtract', 'Off'].map((tab) => (
                                                             <Chip
                                                                 text={tab}
                                                                 selected={(componentRef.current.maskDrawMode || 'On') === tab}
@@ -1478,7 +1498,7 @@
                                                                     componentRef.current.maskDrawMode = tab;
                                                                     setComponentState({ ...componentRef.current });
                                                                     if (x == 'Off') canvasAPI.current.exitDrawMaskMode();
-                                                                    else canvasAPI.current.drawMaskMode();
+                                                                    else canvasAPI.current.drawMaskMode(tab == 'Subtract' ? -1 : 1);
                                                                 }}
                                                                 key={tab}
                                                             />
