@@ -1122,7 +1122,7 @@
 
                                                             console.log('started bg removal');
                                                             let start = Date.now();
-                                                            let [resultImage, resultMask] = await ImageAPI.removeBg(componentRef.current.image);
+                                                            let [resultImage, resultMask] = await ImageAPI.removeBg(canvasAPI.current.componentRef.current.image);
                                                             console.log('done bg removal', Date.now() - start, 'ms');
 
 
