@@ -209,7 +209,7 @@
                 console.log(error);
                 let fallbackResult = await this.aiFill2(image, mask, composite, prompt);
                 if (fallbackResult) {
-                    console.log("Fallback api used");
+                    console.log("fallback api used");
                     return fallbackResult;
                 }
                 return null;
@@ -1022,8 +1022,11 @@
             // stage.on('dragend', async () => {
             //     dragging = false;
             // });
+            // renderGrid(getVisibleGrid(stage, grid, WIDTH, HEIGHT), infiniteGridLayer, rectPool, WIDTH, HEIGHT);
+
 
             // Zoom and Pan logic with limits
+
             function getDistance(p1, p2) {
                 return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
             }
@@ -1218,7 +1221,7 @@
 
                     var scale = stage.scaleX() * (dist / lastDist);
                     scale = clampScale(scale);
-                    
+
                     stage.scaleX(scale);
                     stage.scaleY(scale);
 
@@ -1306,14 +1309,11 @@
             // aiFillMaskClipperGroup.add(new Konva.Rect({ width: componentRef.current.image.width, height: componentRef.current.image.height }));
             // aiFillMaskClipperGroup.add(new Konva.Rect({ x: 0, y: 0, width: image.width(), height: image.height(), stroke: 'blue', strokeWidth: 20 }));
             let aiFillMaskLayer = componentRef.current.stage.find('#ai-fill-mask-layer')[0] || console.log('no ai fill mask layer');
-            console.log('aiFillMaskLayer');
             aiFillMaskLayer.setAttrs({ visible: true });
             aiFillMaskLayer.zIndex(componentRef.current.stage.getLayers().length);
 
             let aiFillMaskClipperGroup = componentRef.current.stage.find('#ai-fill-mask-clipper-group')[0];
-            console.log('aiFillMaskClipperGroup');
             let aiFillMaskImage = componentRef.current.stage.find('#ai-fill-mask-image')[0];
-            console.log('aiFillMaskImage');
             let canvas = aiFillMaskImage.image();
             let lastMask = await getImageFromCanvas(canvas);
             canvas.width = componentRef.current.image.width;
@@ -1456,6 +1456,11 @@
     };
     function MainPage() {
 
+        useEffect(() => {
+            globalRef.current.landingImagesLoaded = 0;
+            setGlobalState({ ...globalRef.current });
+        }, []);
+
         return (
             <motion.div
                 // initial={{ opacity: 0, x: "-100%" }}
@@ -1550,7 +1555,7 @@
                                                     }
                                                 }, 500);
 
-                                            }} className="p-1 h-full aspect-video cursor-pointer object-cover" src={`https://picsum.photos/seed/${Math.random()}/600/600`} alt=""
+                                            }} className="p-1 h-full aspect-video cursor-pointer object-cover" src={`https://picsum.photos/seed/${Math.random()}/${maxDimensions.width}/${maxDimensions.height}`} alt=""
                                                 onClick={async (e) => {
                                                     globalRef.current.image = await getImageFromURL(e.target.src);
                                                     setGlobalState({ ...globalRef.current });
@@ -1708,10 +1713,10 @@
                                                             componentRef.current.taskInfo.subTasks = ['ai-bg-remove'];
                                                             setComponentState({ ...componentRef.current });
 
-                                                            console.log('started bg removal');
+                                                            console.log('started task');
                                                             let start = Date.now();
                                                             let [resultImage, resultMask] = await ImageAPI.removeBg(canvasAPI.current.componentRef.current.image);
-                                                            console.log('done bg removal', Date.now() - start, 'ms');
+                                                            console.log('completed task bg-remove', Date.now() - start, 'ms');
 
 
                                                             if (taskId == componentRef.current.taskInfo?.taskId) {
@@ -1811,10 +1816,10 @@
                                                                 componentRef.current.taskInfo.taskId = taskId;
                                                                 setComponentState({ ...componentRef.current });
 
-                                                                console.log('started ai fill');
+                                                                console.log('started task');
                                                                 let start = Date.now();
                                                                 let result = await ImageAPI.aiFill(canvasAPI.current.componentRef.current.image, mask, composite, prompt);
-                                                                console.log('done ai fill', Date.now() - start, 'ms');
+                                                                console.log('done ai-fill', Date.now() - start, 'ms');
 
                                                                 if (taskId == componentRef.current.taskInfo?.taskId) {
 
