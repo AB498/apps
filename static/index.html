@@ -26,7 +26,7 @@
 
 <div id="root"></div>
 <div id="splash-screen"
-    class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-blue-500 dark:bg-neutral-900 transition-all duration-500">
+    class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-neutral-100 dark:bg-neutral-900 transition-all duration-500">
     <svg class="animate-bounce relative" width="100" height="100" viewBox="0 0 100 100" fill="none"
         xmlns="http://www.w3.org/2000/svg">
         <circle cx="50" cy="50" r="45" fill="#222" />
@@ -1081,7 +1081,7 @@
                 <h2 class="mt-4 text-2xl font-medium text-gray-900 dark:text-white text-center w-full">
                     Pick an image
                 </h2>
-                <div class="mt-4 w-full relative border-2 border-gray-300 dark:border-gray-700 border-dashed rounded-lg p-4 dark:bg-neutral-800 cursor-pointer" id="dropzone">
+                <div class="mt-4 w-full relative border-2 border-gray-300 dark:border-gray-700 border-dashed rounded-lg p-4 bg-white dark:bg-neutral-800 cursor-pointer shadow-[0_0px_10px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_10px_rgba(255,255,255,0.1)]" id="dropzone">
                     <div class="text-center" onClick={async () => {
                         globalRef.current.image = await getImageFromURL(URL.createObjectURL(await getFileUpload()));
                         setGlobalState({ ...globalRef.current });
@@ -1216,7 +1216,7 @@
                 // exit={{ opacity: 0, x: "100%" }}
                 // transition={{ duration: 0.5, ease: "easeOut" }}
                 className="flex flex-col items-start overflow-auto h-full">
-                <h2 class="p-4 text-2xl font-medium text-gray-900 dark:text-white w-full flex items-center gap-4">
+                <h2 class="p-4 text-2xl font-medium text-gray-900 dark:text-white w-full flex items-center gap-4 bg-white dark:bg-neutral-800/25 shadow-[0_0px_10px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_10px_rgba(255,255,255,0.1)]">
                     <i className="fi-rr-arrow-left cursor-pointer rounded-full hover:bg-neutral-500 w-10 aspect-square flex items-center justify-center" onClick={() => {
                         navigate('/');
                     }}></i>
@@ -1232,7 +1232,7 @@
                         {<componentRef.current.extraControls />}
                     </DragCloseDrawer>
 
-                    <div class="w-full h-40 p-4 flex items-center justify-center">
+                    <div class="main-controls w-full h-40 p-4 flex items-center justify-center bg-white dark:bg-neutral-800/25 shadow-[0_0px_10px_rgba(0,0,0,0.1)] dark:shadow-[0_0px_10px_rgba(255,255,255,0.1)]">
 
                         <Splide
                             onMounted={(Splide) => {
@@ -1493,7 +1493,7 @@
                                                         {['Add', 'Subtract', 'Off'].map((tab) => (
                                                             <Chip
                                                                 text={tab}
-                                                                selected={(componentRef.current.maskDrawMode || 'On') === tab}
+                                                                selected={(componentRef.current.maskDrawMode || 'Add') === tab}
                                                                 setSelected={(x) => {
                                                                     componentRef.current.maskDrawMode = tab;
                                                                     setComponentState({ ...componentRef.current });
@@ -1835,7 +1835,7 @@
         }
         window.notification = notification;
         return (
-            <div className="dark:bg-neutral-900 dark:text-white">
+            <div className="bg-neutral-100 dark:bg-neutral-900 dark:text-white">
                 <div className="flex flex-col gap-1 w-72 fixed top-2 right-2 z-50 pointer-events-none">
                     <AnimatePresence>
                         {notifications.map((n) => (
