@@ -784,24 +784,18 @@
         window.componentRef = componentRef;
 
         useEffect(() => {
-            if (!divRef.current) return;
-
-        }, [divRef.current]);
-        useEffect(() => {
             if (!props.image) return;
-            function outputsize() {
-                try {
-                    componentRef.current.stage?.height(divRef.current.offsetHeight);
-                    componentRef.current.stage?.width(divRef.current.offsetWidth);
-                } catch (error) {
-                    console.log(error);
-                }
-            }
-            outputsize();
-            new ResizeObserver(outputsize).observe(divRef.current);
 
             (async () => {
                 await poll(() => divRef.current);
+                function outputsize() {
+                    try {
+                        componentRef.current.stage?.height(divRef.current.offsetHeight);
+                        componentRef.current.stage?.width(divRef.current.offsetWidth);
+                    } catch (error) { console.log(error); }
+                }
+                outputsize();
+                new ResizeObserver(outputsize).observe(divRef.current);
                 await initialSetup();
                 let scale = Math.max(props.image.width, props.image.height) / Math.max(maxDimensions.width, maxDimensions.height);
                 let altered = await alterResolution(props.image, props.image.width / scale, props.image.height / scale)
@@ -1533,12 +1527,12 @@
                                 }}
                             >
                                 <div className="splide__arrows">
-                                    <div className="splide__arrow splide__arrow--prev left-0 -translate-x-full w-auto bg-transparent top-1/2 -translate-y-1/2">
+                                    <button className="splide__arrow splide__arrow--prev left-0 -translate-x-full w-auto bg-transparent top-1/2 -translate-y-1/2 disabled:opacity-0">
                                         <i className="fi-rr-angle-left flex scale-y-150"></i>
-                                    </div>
-                                    <div className="splide__arrow splide__arrow--next right-0 translate-x-full w-auto bg-transparent top-1/2 -translate-y-1/2">
+                                    </button>
+                                    <button className="splide__arrow splide__arrow--next right-0 translate-x-full w-auto bg-transparent top-1/2 -translate-y-1/2 disabled:opacity-0">
                                         <i className="fi-rr-angle-right flex scale-y-150"></i>
-                                    </div>
+                                    </button>
                                 </div>
                                 <SplideTrack>
                                     {Array.from({ length: 50 }).map((img, i) => (
@@ -1648,12 +1642,12 @@
                             }}
                         >
                             <div className="splide__arrows">
-                                <div className="splide__arrow splide__arrow--prev left-0 -translate-x-full w-auto bg-transparent top-1/2 -translate-y-1/2">
+                                <button className="splide__arrow splide__arrow--prev left-0 -translate-x-full w-auto bg-transparent top-1/2 -translate-y-1/2 disabled:opacity-0">
                                     <i className="fi-rr-angle-left flex scale-y-150"></i>
-                                </div>
-                                <div className="splide__arrow splide__arrow--next right-0 translate-x-full w-auto bg-transparent top-1/2 -translate-y-1/2">
+                                </button>
+                                <button className="splide__arrow splide__arrow--next right-0 translate-x-full w-auto bg-transparent top-1/2 -translate-y-1/2 disabled:opacity-0">
                                     <i className="fi-rr-angle-right flex scale-y-150"></i>
-                                </div>
+                                </button>
                             </div>
 
                             <SplideTrack>
