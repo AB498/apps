@@ -609,9 +609,10 @@
     async function getImageFromCanvas(canvas) {
         return await getImageFromURL(canvas.toDataURL("image/png"));
     }
-    async function drawOnCanvas(canvas, image) {
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(image, 0, 0);
+    async function drawOnCanvas(canvas, image, clear = true) {
+        const context = canvas.getContext('2d');
+        context.globalCompositeOperation = 'source-over';
+        context.drawImage(image, 0, 0);
     }
     function getImageFromBlob(blob) {
         return new Promise((resolve, reject) => {
@@ -850,11 +851,13 @@
                 let stage = componentRef.current.stage;
                 let infoLayer = componentRef.current.stage.find('#info-layer')[0];
                 if (!stage) return;
-                if (componentRef.current.stage.find('#stroke-width-preview')?.[0]) componentRef.current.stage.find('#stroke-width-preview')[0].destroy();
-                let circ = new Konva.Circle({ width: width, height: width, id: 'stroke-width-preview', fill: 'red', opacity: 0.5 });
-                infoLayer.add(circ);
+                let circ = componentRef.current.stage.find('#stroke-width-preview')?.[0];
+                if (!circ) {
+                    circ = new Konva.Circle({ width: width, height: width, id: 'stroke-width-preview', fill: 'red', opacity: 0.5 });
+                    infoLayer.add(circ);
+                }
+                circ.setAttrs({ width: width, height: width, listening: false });
                 infoLayer.zIndex(componentRef.current.stage.getLayers().length);
-                infoLayer.zIndex(componentRef.current.stage.getLayers().length)
                 circ.absolutePosition({ x: stage.width() / 2, y: stage.height() / 2 });
                 if (componentRef.current.storeRemoveTimeout) clearTimeout(componentRef.current.storeRemoveTimeout);
                 componentRef.current.storeRemoveTimeout = setTimeout(() => {
@@ -866,9 +869,13 @@
                 setCanvasImage(image);
             },
             async drawMaskMode(addSubtract) {
+                componentRef.current.maskDrawMode = addSubtract;
+                setComponentState({ ...componentRef.current });
                 await enterMaskMode(addSubtract);
             },
             exitDrawMaskMode() {
+                componentRef.current.maskDrawMode = null;
+                setComponentState({ ...componentRef.current });
                 let aiFillMaskLayer = componentRef.current.stage.find('#ai-fill-mask-layer')?.[0];
                 aiFillMaskLayer.setAttrs({ visible: false });
             },
@@ -900,6 +907,7 @@
                 width: divRef.current?.offsetWidth || 500,
                 height: divRef.current?.offsetHeight || 400
             });
+            let infiniteGridLayer = new Konva.Layer({ id: 'infinite-grid-layer' });
             let mainLayer = stage.find('#main-layer')?.[0] || new Konva.Layer({ id: 'main-layer' });
             let infoLayer = stage.find('#info-layer')?.[0] || new Konva.Layer({ id: 'info-layer' });
             let aiFillMaskLayer = new Konva.Layer({
@@ -930,6 +938,7 @@
             aiFillMaskLayer.add(aiFillMaskClipperGroup);
             aiFillMaskClipperGroup.add(aiFillMaskImage);
 
+            stage.add(infiniteGridLayer);
             stage.add(mainLayer);
             stage.add(infoLayer);
             stage.add(aiFillMaskLayer);
@@ -938,6 +947,361 @@
             setComponentState({ ...componentRef.current });
             props.canvasAPI.current.stage = componentRef.current.stage;
 
+            // grid
+            function getVisibleGrid(stage, grid, WIDTH, HEIGHT) {
+                const stagePos = { x: stage.x(), y: stage.y() };
+
+                // Calculate the visible range of the grid
+                const startX = Math.floor((-stagePos.x - stage.width()) / WIDTH) * WIDTH;
+                const endX = Math.floor((-stagePos.x + stage.width() * 2) / WIDTH) * WIDTH;
+
+                const startY = Math.floor((-stagePos.y - stage.height()) / HEIGHT) * HEIGHT;
+                const endY = Math.floor((-stagePos.y + stage.height() * 2) / HEIGHT) * HEIGHT;
+
+                const gridComponents = [];
+
+                // Iterate only over the visible cells
+                for (let x = startX; x < endX; x += WIDTH) {
+                    for (let y = startY; y < endY; y += HEIGHT) {
+                        const indexX = Math.abs(x / WIDTH) % grid.length;
+                        const indexY = Math.abs(y / HEIGHT) % grid[0].length;
+
+                        gridComponents.push({
+                            x,
+                            y,
+                            fill: grid[indexX][indexY],
+                        });
+                    }
+                }
+
+                return gridComponents;
+            }
+
+            function renderGrid(gridComponents, layer, rectPool, WIDTH, HEIGHT) {
+                let rectIndex = 0;
+
+                // Reuse existing rectangles
+                for (const { x, y, fill } of gridComponents) {
+                    let rect = rectPool[rectIndex];
+
+                    if (!rect) {
+                        // Create a new rectangle if pool is exhausted
+                        rect = new Konva.Rect({
+                            width: WIDTH,
+                            height: HEIGHT,
+                        });
+                        rectPool.push(rect);
+                        layer.add(rect);
+                    }
+
+                    // Update rectangle properties
+                    rect.setAttrs({ x, y, fill });
+                    rect.show(); // Ensure visible
+                    rectIndex++;
+                }
+
+                // Hide unused rectangles in the pool
+                for (; rectIndex < rectPool.length; rectIndex++) {
+                    rectPool[rectIndex].hide();
+                }
+
+                layer.batchDraw(); // Batch render for efficiency
+            }
+
+            const WIDTH = 50;
+            const HEIGHT = 50;
+            const grid = [
+                ['#222', '#000'],
+                ['#000', '#222'],
+            ];
+            const rectPool = []; // Pool for reusable rectangles
+
+            // stage.setAttrs({ draggable: true });
+            let dragging = false;
+            // stage.off('dragstart dragmove dragend');
+            // stage.on('dragstart', () => {
+            //     dragging = true;
+            // });
+            // stage.on('dragmove', () => {
+            //     renderGrid(getVisibleGrid(stage, grid, WIDTH, HEIGHT), infiniteGridLayer, rectPool, WIDTH, HEIGHT);
+            // });
+            // stage.on('dragend', async () => {
+            //     dragging = false;
+            // });
+
+            // Zoom and Pan logic with limits
+            function getDistance(p1, p2) {
+                return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+            }
+
+            function getCenter(p1, p2) {
+                return {
+                    x: (p1.x + p2.x) / 2,
+                    y: (p1.y + p2.y) / 2,
+                };
+            }
+
+            // Limits
+            const ZOOM_MIN = 0.5; // Minimum zoom level
+            const ZOOM_MAX = 3;   // Maximum zoom level
+            const PAN_BOUNDS = {  // Pan boundaries
+                xMin: -500,
+                xMax: 500,
+                yMin: -500,
+                yMax: 500,
+            };
+
+            var lastCenter = null;
+            var lastDist = 0;
+            var lastP = 0;
+            var dragStopped = false;
+            var isSingleTouch = false;
+            var isMouseDragging = false;
+            var mouseStartPos = null;
+
+            // Ensure the stage stays within pan bounds
+            function clampPosition(pos) {
+                return {
+                    x: Math.max(PAN_BOUNDS.xMin, Math.min(PAN_BOUNDS.xMax, pos.x)),
+                    y: Math.max(PAN_BOUNDS.yMin, Math.min(PAN_BOUNDS.yMax, pos.y)),
+                };
+            }
+
+            // Ensure the stage zoom stays within limits
+            function clampScale(scale) {
+                return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, scale));
+            }
+
+            // Update stage position
+            function updateStagePosition(newPos) {
+                const clampedPos = (newPos); // Clamp position to bounds
+                stage.position(clampedPos);
+                stage.batchDraw(); // Redraw stage
+            }
+
+            // Update stage scale
+            function updateStageScale(newScale, pointer) {
+                const clampedScale = clampScale(newScale); // Clamp scale to limits
+                const oldScale = stage.scaleX();
+
+                // Adjust position to keep zoom centered on pointer
+                const mousePointTo = {
+                    x: (pointer.x - stage.x()) / oldScale,
+                    y: (pointer.y - stage.y()) / oldScale,
+                };
+
+                const newPos = {
+                    x: pointer.x - mousePointTo.x * clampedScale,
+                    y: pointer.y - mousePointTo.y * clampedScale,
+                };
+
+                stage.scale({ x: clampedScale, y: clampedScale });
+                updateStagePosition(newPos);
+            }
+            function resetStageViewport(stage, kanvaImage) {
+
+                let clampedScale = clampScale(stage.scaleX());
+                stage.scale({ x: clampedScale, y: clampedScale });
+
+                let imageRect = { x: kanvaImage.absolutePosition().x, y: kanvaImage.absolutePosition().y, width: kanvaImage.width() * componentRef.current.stage.scaleX(), height: kanvaImage.height() * componentRef.current.stage.scaleX() }
+                const { x: imageX, y: imageY, width: imageWidth, height: imageHeight } = imageRect;
+                let imageCenter = { x: imageX + imageWidth / 2, y: imageY + imageHeight / 2 };
+                // Get the dimensions of the stage (container size)
+                let targetX = stage.absolutePosition().x;
+                let targetY = stage.absolutePosition().y;
+
+                let stageCenterX = stage.width() / 2;
+                let stageCenterY = stage.height() / 2;
+
+                let upDelta = Math.min(imageCenter.y - stageCenterY, imageY);
+                let downDelta = Math.min(stageCenterY - imageCenter.y, stage.height() - imageHeight - imageY);
+                let leftDelta = Math.min(imageCenter.x - stageCenterX, imageX);
+                let rightDelta = Math.min(stageCenterX - imageCenter.x, stage.width() - imageWidth - imageX);
+                if (upDelta > downDelta) {
+                    targetY = stage.absolutePosition().y - upDelta;
+                } else {
+                    targetY = stage.absolutePosition().y + downDelta;
+                }
+                if (leftDelta > rightDelta) {
+                    targetX = stage.absolutePosition().x - leftDelta;
+                }
+                else {
+                    targetX = stage.absolutePosition().x + rightDelta;
+                }
+                if (imageX <= 0 && imageX + imageWidth > stage.width()) {
+                    targetX = stage.absolutePosition().x;
+                }
+                if (imageY <= 0 && imageY + imageHeight > stage.height()) {
+                    targetY = stage.absolutePosition().y;
+                }
+
+
+                if (targetX != stage.absolutePosition().x || targetY != stage.absolutePosition().y) stage.absolutePosition({ x: targetX, y: targetY });
+
+                stage.batchDraw();
+            }
+
+
+            // Touchmove logic for multi-touch zoom/pan
+            stage.on('touchmove', function (e) {
+
+
+
+                e.evt.preventDefault();
+                const touches = e.evt.touches;
+                const touch1 = touches[0];
+                const touch2 = touches[1];
+
+
+                if (touches.length === 1) {
+                    if (componentRef.current.maskDrawMode) {
+                        return;
+                    }
+                    var p1 = {
+                        x: touch1.clientX,
+                        y: touch1.clientY,
+                    };
+
+                    if (!lastP) {
+                        lastP = p1;
+                    }
+                    var newP = p1;
+
+                    var pointTo = {
+                        x: (newP.x - stage.x()) / stage.scaleX(),
+                        y: (newP.y - stage.y()) / stage.scaleX(),
+                    };
+
+                    var scale = stage.scaleX();
+
+                    stage.scaleX(scale);
+                    stage.scaleY(scale);
+
+                    // calculate new position of the stage
+                    var dx = newP.x - lastP.x;
+                    var dy = newP.y - lastP.y;
+
+                    var newPos = {
+                        x: newP.x - pointTo.x * scale + dx,
+                        y: newP.y - pointTo.y * scale + dy,
+                    };
+
+                    stage.position(newPos);
+
+                    lastP = newP;
+
+                }
+
+                if (touches.length === 2) {
+
+                    var p1 = {
+                        x: touch1.clientX,
+                        y: touch1.clientY,
+                    };
+                    var p2 = {
+                        x: touch2.clientX,
+                        y: touch2.clientY,
+                    };
+
+                    if (!lastCenter) {
+                        lastCenter = getCenter(p1, p2);
+                        return;
+                    }
+                    var newCenter = getCenter(p1, p2);
+
+                    var dist = getDistance(p1, p2);
+
+                    if (!lastDist) {
+                        lastDist = dist;
+                    }
+
+                    // local coordinates of center point
+                    var pointTo = {
+                        x: (newCenter.x - stage.x()) / stage.scaleX(),
+                        y: (newCenter.y - stage.y()) / stage.scaleX(),
+                    };
+
+                    var scale = stage.scaleX() * (dist / lastDist);
+
+                    stage.scaleX(scale);
+                    stage.scaleY(scale);
+
+                    // calculate new position of the stage
+                    var dx = newCenter.x - lastCenter.x;
+                    var dy = newCenter.y - lastCenter.y;
+
+                    var newPos = {
+                        x: newCenter.x - pointTo.x * scale + dx,
+                        y: newCenter.y - pointTo.y * scale + dy,
+                    };
+
+                    stage.position(newPos);
+
+                    lastDist = dist;
+                    lastCenter = newCenter;
+                }
+            });
+
+            // Reset multi-touch state
+            stage.on('touchend mouseup mouseleave', function (e) {
+                if ((e.evt.touches && e.evt.touches?.length == 1)) {
+
+                } else {
+
+                    resetStageViewport(stage, componentRef.current.stage.find('#source-image')[0]);
+                }
+
+                lastP = null;
+                lastDist = 0;
+                lastCenter = null;
+                isSingleTouch = false;
+                isMouseDragging = false;
+            });
+
+            // Mouse drag logic
+            stage.on('mousedown', function (e) {
+                if (componentRef.current.maskDrawMode) {
+                    isMouseDragging = false;
+                    return;
+                }
+                isMouseDragging = true;
+                mouseStartPos = { x: e.evt.clientX, y: e.evt.clientY };
+            });
+
+            stage.on('mousemove', function (e) {
+                if (isMouseDragging) {
+                    const mouseCurrentPos = { x: e.evt.clientX, y: e.evt.clientY };
+                    const dx = mouseCurrentPos.x - mouseStartPos.x;
+                    const dy = mouseCurrentPos.y - mouseStartPos.y;
+
+                    const newPos = ({
+                        x: stage.x() + dx,
+                        y: stage.y() + dy,
+                    });
+
+                    stage.position(newPos);
+                    mouseStartPos = mouseCurrentPos;
+                }
+            });
+
+
+            // Mouse zoom logic
+            stage.on('wheel', function (e) {
+                e.evt.preventDefault();
+                const pointer = stage.getPointerPosition();
+                const oldScale = stage.scaleX();
+                const scaleBy = 1.05;
+
+                const newScale = e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
+                updateStageScale(newScale, pointer); // Constrain zoom and adjust position
+                resetStageViewport(stage, componentRef.current.stage.find('#source-image')[0]);
+            });
+
+
+            // renderGrid(getVisibleGrid(stage, grid, WIDTH, HEIGHT), infiniteGridLayer, rectPool, WIDTH, HEIGHT);
+
+
+
         }
         async function enterMaskMode(addSubtract) {
 
@@ -945,12 +1309,15 @@
 
             // aiFillMaskClipperGroup.add(new Konva.Rect({ width: componentRef.current.image.width, height: componentRef.current.image.height }));
             // aiFillMaskClipperGroup.add(new Konva.Rect({ x: 0, y: 0, width: image.width(), height: image.height(), stroke: 'blue', strokeWidth: 20 }));
-            let aiFillMaskLayer = componentRef.current.stage.find('#ai-fill-mask-layer')[0];
+            let aiFillMaskLayer = componentRef.current.stage.find('#ai-fill-mask-layer')[0] || console.log('no ai fill mask layer');
+            console.log('aiFillMaskLayer');
             aiFillMaskLayer.setAttrs({ visible: true });
             aiFillMaskLayer.zIndex(componentRef.current.stage.getLayers().length);
 
             let aiFillMaskClipperGroup = componentRef.current.stage.find('#ai-fill-mask-clipper-group')[0];
+            console.log('aiFillMaskClipperGroup');
             let aiFillMaskImage = componentRef.current.stage.find('#ai-fill-mask-image')[0];
+            console.log('aiFillMaskImage');
             let canvas = aiFillMaskImage.image();
             let lastMask = await getImageFromCanvas(canvas);
             canvas.width = componentRef.current.image.width;
@@ -976,19 +1343,41 @@
             aiFillMaskLayer.on('mouseenter', function () { componentRef.current.stage.container().style.cursor = 'crosshair'; });
             aiFillMaskLayer.on('mouseleave', function () { componentRef.current.stage.container().style.cursor = 'default'; });
 
-            aiFillMaskLayer.on('mousedown touchstart', function (e) {
+
+            async function unlinkImageFromUrl(image) {
+                let blob = await getBlobFromImage(image);
+                let url = URL.createObjectURL(blob);
+                let newImage = new Image();
+                newImage.src = url;
+                return newImage;
+            }
+            aiFillMaskLayer.on('mousedown touchstart', async function (e) {
                 isPaint = true;
                 lastPointerPosition = componentRef.current.stage.getRelativePointerPosition();
             });
 
-            aiFillMaskLayer.on('mouseup touchend', function () {
+            aiFillMaskLayer.on('mouseup touchend', async function () {
+                // let lastState = context.globalCompositeOperation
+                // context.globalCompositeOperation =  'source-over';
+                lastMask = await unlinkImageFromUrl(await getImageFromCanvas(canvas));
+                // context.globalCompositeOperation =  lastState;
+                console.log('mask saved')
                 isPaint = false;
             });
 
             // and core function - drawing
-            aiFillMaskLayer.on('mousemove touchmove', function (e) {
+            aiFillMaskLayer.on('mousemove touchmove', async function (e) {
                 if (!isPaint) return;
                 if (!lastPointerPosition) return;
+
+                // if two touch points are detected prevent default action or propagation
+                if (e.evt.touches?.length > 1) {
+                    // undow drawn session
+                    console.log('undo');
+                    isPaint = false;
+                    await drawOnCanvas(canvas, lastMask);
+                    return;
+                }
                 // prevent scrolling on touch devices
                 // e.evt.preventDefault();
                 context.globalCompositeOperation = addSubtract == 1 ? 'source-over' : 'destination-out';
@@ -1196,7 +1585,7 @@
             DONE: 'DONE'
         }
         let componentRef = useRef({
-            landingImagesLoaded: 0, taskState: null, processState: ProcessState.PICK_IMAGE, image: null, controls: [], strokeWidth: 20, maskDrawMode: 'On'
+            landingImagesLoaded: 0, taskState: null, processState: ProcessState.PICK_IMAGE, image: null, controls: [], strokeWidth: 20, maskDrawMode: 'Add'
         });
         let [componentState, setComponentState] = useState({ ...componentRef.current });
         let canvasAPI = useRef({ current: null });
@@ -1216,7 +1605,7 @@
                 // exit={{ opacity: 0, x: "100%" }}
                 // transition={{ duration: 0.5, ease: "easeOut" }}
                 className="flex flex-col items-start overflow-auto h-full">
-                <h2 class="p-4 text-2xl font-medium text-gray-900 dark:text-white w-full flex items-center gap-4 bg-white dark:bg-neutral-800/25 shadow-[0_0px_10px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_10px_rgba(255,255,255,0.1)]">
+                <h2 class="p-4 text-2xl font-medium text-gray-900 dark:text-white w-full flex items-center gap-4 bg-white dark:bg-neutral-950/25 shadow-[0_0px_10px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_10px_rgba(255,255,255,0.1)]">
                     <i className="fi-rr-arrow-left cursor-pointer rounded-full hover:bg-neutral-500 w-10 aspect-square flex items-center justify-center" onClick={() => {
                         navigate('/');
                     }}></i>
@@ -1232,7 +1621,7 @@
                         {<componentRef.current.extraControls />}
                     </DragCloseDrawer>
 
-                    <div class="main-controls w-full h-40 p-4 flex items-center justify-center bg-white dark:bg-neutral-800/25 shadow-[0_0px_10px_rgba(0,0,0,0.1)] dark:shadow-[0_0px_10px_rgba(255,255,255,0.1)]">
+                    <div class="main-controls w-full h-40 p-4 flex items-center justify-center bg-white dark:bg-neutral-950/25 shadow-[0_0px_10px_rgba(0,0,0,0.1)] dark:shadow-[0_0px_10px_rgba(255,255,255,0.1)]">
 
                         <Splide
                             onMounted={(Splide) => {
@@ -1400,8 +1789,10 @@
                                             componentRef.current.extraControlsOpen = true;
                                             let Comp = () => {
                                                 useEffect(() => {
+                                                    if (!componentRef.current.maskDrawMode) componentRef.current.maskDrawMode = 'Add';
+                                                    setComponentState({ ...componentRef.current });
                                                     if (componentRef.current.maskDrawMode == 'Off') canvasAPI.current.exitDrawMaskMode()
-                                                    else canvasAPI.current.drawMaskMode((componentRef.current.maskDrawMode || 'Add') == 'Subtract' ? -1 : 1);
+                                                    else canvasAPI.current.drawMaskMode(componentRef.current.maskDrawMode == 'Subtract' ? -1 : 1);
                                                 }, []);
 
                                                 return (<div className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name == 'ai-fill' && componentRef.current.taskInfo.subTasks?.includes('ai-fill-prompt') ? 'pointer-events-none opacity-50' : ''} w-full flex flex-col items-start gap-2`}>
@@ -1493,7 +1884,7 @@
                                                         {['Add', 'Subtract', 'Off'].map((tab) => (
                                                             <Chip
                                                                 text={tab}
-                                                                selected={(componentRef.current.maskDrawMode || 'Add') === tab}
+                                                                selected={componentRef.current.maskDrawMode == tab}
                                                                 setSelected={(x) => {
                                                                     componentRef.current.maskDrawMode = tab;
                                                                     setComponentState({ ...componentRef.current });
