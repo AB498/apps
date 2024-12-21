@@ -1037,7 +1037,7 @@
 
             // Limits
             const ZOOM_MIN = 0.5; // Minimum zoom level
-            const ZOOM_MAX = 3;   // Maximum zoom level
+            const ZOOM_MAX = 10;   // Maximum zoom level
             const PAN_BOUNDS = {  // Pan boundaries
                 xMin: -500,
                 xMax: 500,
@@ -1098,7 +1098,8 @@
                 stage.scale({ x: clampedScale, y: clampedScale });
 
                 let imageRect = { x: kanvaImage.absolutePosition().x, y: kanvaImage.absolutePosition().y, width: kanvaImage.width() * componentRef.current.stage.scaleX(), height: kanvaImage.height() * componentRef.current.stage.scaleX() }
-                const { x: imageX, y: imageY, width: imageWidth, height: imageHeight } = imageRect;
+                let { x: imageX, y: imageY, width: imageWidth, height: imageHeight } = imageRect;
+
                 let imageCenter = { x: imageX + imageWidth / 2, y: imageY + imageHeight / 2 };
                 // Get the dimensions of the stage (container size)
                 let targetX = stage.absolutePosition().x;
@@ -1216,7 +1217,8 @@
                     };
 
                     var scale = stage.scaleX() * (dist / lastDist);
-
+                    scale = clampScale(scale);
+                    
                     stage.scaleX(scale);
                     stage.scaleY(scale);
 
