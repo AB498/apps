@@ -1,3 +1,7 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"
+    integrity="sha512-7eHRwcbYkK4d9g/6tD/mhkf++eoTHwpNM9woBxtPUBWm67zeAfFC+HrdoE2GanKeocly/VxeLvIqwvCdk7qScg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script> -->
@@ -781,7 +785,7 @@
 
 
     function CustomCanvas(props) {
-        let componentRef = useRef({ step: 0, loading: false, image: null, strokeWidth: 50, editHistory: [] });
+        let componentRef = useRef({ step: 0, loading: false, image: null, strokeWidth: 50, editHistory: [], pointers: {} });
         let [componentState, setComponentState] = useState({ ...componentRef.current });
         let divRef = useRef(null);
         window.componentRef = componentRef;
@@ -1137,12 +1141,32 @@
                 }
 
 
-                if (targetX != stage.absolutePosition().x || targetY != stage.absolutePosition().y) stage.absolutePosition({ x: targetX, y: targetY });
+                if (targetX != stage.absolutePosition().x || targetY != stage.absolutePosition().y)
+                    animateAbsoluteTransform(stage, ({ x: targetX, y: targetY }));
 
                 stage.batchDraw();
             }
 
+            function animateAbsoluteTransform(element, targetPosition) {
 
+                let start = { x: element.absolutePosition().x, y: element.absolutePosition().y };
+                let end = targetPosition;
+
+                let animation = gsap.to(start, {
+                    x: end.x,
+                    y: end.y,
+                    duration: 0.3,
+                    onUpdate: () => {
+                        if (componentRef.current.pointers?.pointerdown) {
+                            // delete animation
+                            animation.kill();
+                            return;
+                        }
+                        element.absolutePosition({ x: start.x, y: start.y });
+                    }
+                })
+
+            }
             // Touchmove logic for multi-touch zoom/pan
             stage.on('touchmove', function (e) {
 
@@ -1246,6 +1270,7 @@
 
             // Reset multi-touch state
             stage.on('touchend mouseup mouseleave', function (e) {
+                componentRef.current.pointers.pointerdown = false;
                 if ((e.evt.touches && e.evt.touches?.length == 1)) {
 
                 } else {
@@ -1261,7 +1286,8 @@
             });
 
             // Mouse drag logic
-            stage.on('mousedown', function (e) {
+            stage.on('mousedown touchstart', function (e) {
+                componentRef.current.pointers.pointerdown = true;
                 if (componentRef.current.maskDrawMode) {
                     isMouseDragging = false;
                     return;
