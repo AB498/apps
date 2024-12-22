@@ -32,7 +32,7 @@
 <div id="splash-screen"
     class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-neutral-100 dark:bg-neutral-900 transition-all duration-500">
     <div
-        class="animate-bounce rounded-full bg-white dark:bg-neutral-950/50 p-4 shadow-[0_0px_10px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_10px_rgba(255,255,255,0.1)]">
+        class="animate-bounce rounded-full bg-white dark:bg-neutral-800 p-4 shadow-[0_0px_10px_rgba(0,0,0,0.1)] dark:shadow-[0_0px_10px_rgba(255,255,255,0.1)]">
         <svg width="100" height="100" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
             <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
             <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -253,7 +253,7 @@
                     randomize_seed: true,
                     width: image.width,
                     height: image.height,
-                    guidance_scale: 50,
+                    guidance_scale: 30,
                     num_inference_steps: 30,
                 });
                 return await getImageFromURL(result.data[0].url); // filled
@@ -282,7 +282,7 @@
                     randomize_seed: true,      // randomize seed
                     width: image.width,       // width
                     height: image.height,      // height
-                    guidance_scale: 50,
+                    guidance_scale: 30,
                     num_inference_steps: 30,
 
                 };
@@ -912,12 +912,15 @@
 
         function resetStageViewport(stage, kanvaImage, fitImage = false) {
             if (!stage || !kanvaImage) return;
-            // let clampedScale = clampScale(stage.scaleX());
-            // stage.scale({ x: clampedScale, y: clampedScale });
 
+            let prevScale = stage.scaleX();
+            let clampedScale = clampScale(stage.scaleX());
+            stage.scale({ x: clampedScale, y: clampedScale });
+            let targetScale = stage.scaleX();
             let imageRect = { x: kanvaImage.absolutePosition().x, y: kanvaImage.absolutePosition().y, width: kanvaImage.width() * componentRef.current.stage.scaleX(), height: kanvaImage.height() * componentRef.current.stage.scaleX() }
+
             if (fitImage) {
-                let targetScale = Math.min(stage.width() * stage.scaleX() / imageRect.width, stage.height() * stage.scaleX() / imageRect.height);
+                targetScale = Math.min(stage.width() * stage.scaleX() / imageRect.width, stage.height() * stage.scaleX() / imageRect.height);
                 stage.scale({ x: targetScale, y: targetScale });
             }
             imageRect = { x: kanvaImage.absolutePosition().x, y: kanvaImage.absolutePosition().y, width: kanvaImage.width() * componentRef.current.stage.scaleX(), height: kanvaImage.height() * componentRef.current.stage.scaleX() }
@@ -953,19 +956,21 @@
                 targetY = stage.absolutePosition().y;
             }
 
+            stage.scale({ x: prevScale, y: prevScale });
             if (targetX != stage.absolutePosition().x || targetY != stage.absolutePosition().y)
-                animateAbsoluteTransform(stage, ({ x: targetX, y: targetY }));
+                animateAbsoluteTransform(stage, { x: targetX, y: targetY, scale: targetScale });
 
             stage.batchDraw();
         }
         function animateAbsoluteTransform(element, targetPosition) {
 
-            let start = { x: element.absolutePosition().x, y: element.absolutePosition().y };
+            let start = { x: element.absolutePosition().x, y: element.absolutePosition().y, scale: element.scaleX() };
             let end = targetPosition;
 
             let animation = gsap.to(start, {
                 x: end.x,
                 y: end.y,
+                scale: end.scale,
                 duration: 0.3,
                 onUpdate: () => {
                     if (componentRef.current.pointers?.pointerdown) {
@@ -974,6 +979,7 @@
                         return;
                     }
                     element.absolutePosition({ x: start.x, y: start.y });
+                    element.scale({ x: start.scale, y: start.scale });
                 }
             })
 
@@ -1379,7 +1385,7 @@
                     };
 
                     var scale = stage.scaleX() * (dist / lastDist);
-                    scale = clampScale(scale);
+                    scale = scale > ZOOM_MAX ? ZOOM_MAX : scale;
 
                     stage.scaleX(scale);
                     stage.scaleY(scale);
@@ -1638,7 +1644,7 @@
                 <h2 class="mt-4 text-2xl font-medium text-gray-900 dark:text-white text-center w-full">
                     Pick an image
                 </h2>
-                <div class="mt-4 w-full relative border-2 border-gray-300 dark:border-gray-700 border-dashed rounded-lg p-4 bg-white dark:bg-neutral-800 cursor-pointer shadow-[0_0px_10px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_10px_rgba(255,255,255,0.1)]" id="dropzone">
+                <div class="mt-4 w-full relative border-2 border-gray-300 dark:border-gray-700 border-dashed rounded-lg p-4 bg-white dark:bg-neutral-800 cursor-pointer shadow-[0_0px_10px_rgba(0,0,0,0.1)] dark:shadow-[0_0px_10px_rgba(255,255,255,0.1)]" id="dropzone">
                     <div class="text-center" onClick={async () => {
                         globalRef.current.image = await getImageFromURL(URL.createObjectURL(await getFileUpload()));
                         setGlobalState({ ...globalRef.current });
@@ -1814,7 +1820,7 @@
                 // exit={{ opacity: 0, x: "100%" }}
                 // transition={{ duration: 0.5, ease: "easeOut" }}
                 className={`flex flex-col items-start h-[${window.innerHeight}px] overflow-auto`}>
-                <h2 class="px-4 h-16 shrink-0 text-2xl font-medium text-gray-900 dark:text-white w-full flex items-center gap-2 bg-white dark:bg-neutral-950/25 shadow-[0_0px_10px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_10px_rgba(255,255,255,0.1)]">
+                <h2 class="px-4 h-16 shrink-0 text-2xl font-medium text-gray-900 dark:text-white w-full flex items-center gap-2 bg-white dark:bg-neutral-950/25 shadow-[0_0px_10px_rgba(0,0,0,0.1)] dark:shadow-[0_0px_10px_rgba(255,255,255,0.1)]">
                     <i className="fi-rr-arrow-left cursor-pointer rounded-full hover:bg-neutral-500 w-10 aspect-square flex items-center justify-center" onClick={() => {
                         navigate('/');
                     }}></i>
@@ -1874,6 +1880,7 @@
                             top: 0,
                             bottom: 0,
                         }}
+                        className="shadow-[0_0px_10px_rgba(0,0,0,0.1)] dark:shadow-[0_0px_10px_rgba(255,255,255,0.1)]"
                     >
 
                         <div class="w-full h-full flex flex-col">
@@ -1926,7 +1933,7 @@
                                                 id="template-button"
                                                 onClick={async () => {
                                                     if (isDragging) return;
-                                                    if (!componentRef.current.taskInfo || componentRef.current.taskInfo.name != 'template' || height.get() <= defaultHeight) {
+                                                    if (height.get() <= defaultHeight) {
                                                         if (height.get() <= defaultHeight) openExtraMainPage(animate, height, document.querySelector('.main-content-container').clientHeight / 2);
                                                     }
                                                     else
@@ -1975,7 +1982,7 @@
                                                     };
                                                     componentRef.current.extraControlsOpen = true;
                                                     componentRef.current.extraControls = () => (
-                                                        <><button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name == 'bg-remove' && componentRef.current.taskInfo.subTasks?.includes('ai-bg-remove') ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-20 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
+                                                        <><button className={`${componentRef.current.taskInfo && componentRef.current.taskInfo.name == 'bg-remove' && componentRef.current.taskInfo.subTasks?.includes('ai-bg-remove') ? 'pointer-events-none opacity-50' : ''} max-w-32 w-full max-h-16 h-full rounded flex flex-col justify-center items-center bg-neutral-200 dark:bg-neutral-800 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-700`}
                                                             onClick={async () => {
                                                                 try {
                                                                     let taskId = uuid();
