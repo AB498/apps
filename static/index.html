@@ -1851,18 +1851,19 @@
                                                             try {
                                                                 let taskId = uuid();
 
+                                                                
+                                                                componentRef.current.taskInfo.disableCanvas = true;
+                                                                componentRef.current.taskInfo.subTasks = ['ai-fill-prompt'];
+                                                                componentRef.current.taskInfo.taskId = taskId;
+                                                                setComponentState({ ...componentRef.current });
+                                                                
                                                                 let prompt = document.querySelector('#prompt-input').value;
                                                                 let mask = await canvasAPI.current.getDrawnMask();
                                                                 let composite = await imprintOnImage(canvasAPI.current.componentRef.current.image, mask);
                                                                 console.image(canvasAPI.current.componentRef.current.image.src);
                                                                 console.image(mask.src);
                                                                 console.image(composite.src);
-
-                                                                componentRef.current.taskInfo.disableCanvas = true;
-                                                                componentRef.current.taskInfo.subTasks = ['ai-fill-prompt'];
-                                                                componentRef.current.taskInfo.taskId = taskId;
-                                                                setComponentState({ ...componentRef.current });
-
+                                                                
                                                                 console.log('started task');
                                                                 let start = Date.now();
                                                                 let result = await ImageAPI.aiFill(canvasAPI.current.componentRef.current.image, mask, composite, prompt);
