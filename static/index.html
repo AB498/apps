@@ -48,7 +48,8 @@
         "swiper/react": "https://esm.sh/swiper@11.1.15/react?dev",
         "swiper/modules": "https://esm.sh/swiper@11.1.15/modules?dev",
         "@splidejs/react-splide": "https://esm.sh/*@splidejs/react-splide?dev",
-        "@splidejs/splide-extension-grid": "https://esm.sh/*@splidejs/splide-extension-grid?dev"
+        "@splidejs/splide-extension-grid": "https://esm.sh/*@splidejs/splide-extension-grid?dev",
+        "@splidejs/splide-extension-auto-scroll": "https://esm.sh/*@splidejs/splide-extension-auto-scroll?dev"
       }
     }
 </script>
@@ -63,6 +64,7 @@
     import * as swiperModules from "swiper/modules";
     import * as reactSplide from "@splidejs/react-splide";
     import * as splideGrid from "@splidejs/splide-extension-grid";
+    import { AutoScroll } from '@splidejs/splide-extension-auto-scroll';
 
     console.log('v3');
 
@@ -75,11 +77,11 @@
     const { HashRouter, Route, Routes, Navigate, useHistory, useLocation, Link, useNavigate } = reactRouter;
     const { useDragControls, useMotionValue, useAnimate, motion, AnimatePresence } = framerMotion;
 
-    let maxDimensions = { width: 500, height: 500 };
+    let maxDimensions = { width: 600, height: 600 };
 
     let modules = {
         maxDimensions,
-        reactSplide, Splide, SplideSlide, SplideTrack,
+        reactSplide, Splide, SplideSlide, SplideTrack, AutoScroll,
         // safe, uuid, useAsync, useForceUpdate, poll, useStream, subscribeFnSync, transform,
         // MakeComponent, getImageFromURL, getImageFromBlob, getBlobFromImage, downloadImageBlobFromUrl, cropImage, getImageFromCanvas,
         // RealtimeComponent, AsyncComponent, StreamComponent, makeReactive, reactive, useBreakpoint, isJSONObject
@@ -611,6 +613,7 @@
     }
     async function drawOnCanvas(canvas, image, clear = true) {
         const context = canvas.getContext('2d');
+        if (clear) context.clearRect(0, 0, canvas.width, canvas.height);
         context.globalCompositeOperation = 'source-over';
         context.drawImage(image, 0, 0);
     }
@@ -798,7 +801,7 @@
                 new ResizeObserver(outputsize).observe(divRef.current);
                 await initialSetup();
                 let scale = Math.max(props.image.width, props.image.height) / Math.max(maxDimensions.width, maxDimensions.height);
-                let altered = await alterResolution(props.image, props.image.width / scale, props.image.height / scale)
+                let altered = await alterResolution(props.image, props.image.width, props.image.height)
                 await setCanvasImage(props.image);
             })();
         }, [props.image]);
@@ -1039,7 +1042,7 @@
             }
 
             // Limits
-            const ZOOM_MIN = 0.5; // Minimum zoom level
+            const ZOOM_MIN = 0.5 * (500 / Math.max(maxDimensions.width, maxDimensions.height));
             const ZOOM_MAX = 10;   // Maximum zoom level
             const PAN_BOUNDS = {  // Pan boundaries
                 xMin: -500,
@@ -1355,7 +1358,7 @@
             aiFillMaskLayer.on('mouseup touchend', async function () {
                 // let lastState = context.globalCompositeOperation
                 // context.globalCompositeOperation =  'source-over';
-                lastMask = await unlinkImageFromUrl(await getImageFromCanvas(canvas));
+                lastMask = getImageFromCanvas(canvas);
                 // context.globalCompositeOperation =  lastState;
                 console.log('mask saved')
                 isPaint = false;
@@ -1371,7 +1374,7 @@
                     // undow drawn session
                     console.log('undo');
                     isPaint = false;
-                    await drawOnCanvas(canvas, lastMask);
+                    await drawOnCanvas(canvas, await lastMask);
                     return;
                 }
                 // prevent scrolling on touch devices
@@ -1389,7 +1392,7 @@
 
                 lastPointerPosition = pos;
                 // redraw manually
-                aiFillMaskLayer.batchDraw();
+                aiFillMaskLayer.draw();
 
             });
         }
@@ -1512,17 +1515,35 @@
                                 onMounted={(Splide) => {
                                     // Splide.Components.Autoplay.play();
                                 }}
+                                onMouseOver={(e) => {
+                                    window.ee = e.target;
+                                }}
                                 hasTrack={false}
-                                extensions={{ Grid }}
+                                extensions={{ Grid, AutoScroll }}
                                 options={{
                                     type: 'loop',
                                     perPage: 3,
                                     perMove: 1,
-                                    autoplay: true,
-                                    interval: 2000,
-                                    gap: '0.5rem',
+                                    // autoplay: true,
+                                    // interval: 2000,
+                                    // pauseOnHover: true,
+                                    // pauseOnFocus: true,
+                                    // waitForTransition: false,
+                                    drag: 'free',
+                                    focus: 'center',
+                                    perPage: 3,
+                                    autoScroll: {
+                                        speed: 1,
+                                    },
+
                                     pagination: 0,
+                                    gap: '0.5rem',
                                     arrows: 2,
+                                    // autoScroll: {
+                                    //     speed: 2,
+                                    //     pauseOnHover: false,
+                                    // },
+
                                     grid: {
                                         rows: 2,
                                         cols: 1,
@@ -1826,7 +1847,7 @@
                                                                     console.log('result', result, result?.src);
                                                                     if (!result) throw new Error('Failed AI Fill. Result is null');
                                                                     result = await alterResolution(result, canvasAPI.current.componentRef.current.image.width, canvasAPI.current.componentRef.current.image.height);
-                                                                    console.image(result);
+                                                                    console.image(result?.src);
                                                                     // might have thrown so catch
 
                                                                     canvasAPI.current.setImage(result);
