@@ -1167,6 +1167,31 @@
                 })
 
             }
+
+            function debugCanvas(stage) {
+                try {
+                    let stageCoordsText = stage.find('#stage-coords-text')?.[0] || new Konva.Text({
+                        id: 'stage-coords-text',
+                        text: `x: ${stage.x().toFixed(2)}, y: ${stage.y().toFixed(2)}`,
+                        fontSize: 20,
+                        height: 20,
+                        fontFamily: 'Arial',
+                        fill: 'red',
+                        x: 0,
+                        y: -20,
+                    });
+                    stage.find('#main-layer')?.[0].add(stageCoordsText);
+                    stageCoordsText.text(`x: ${stage.x().toFixed(2)}, y: ${stage.y().toFixed(2)}`);
+                } catch (error) { console.log(error) }
+            }
+            setInterval(() => {
+                debugCanvas(stage);
+            }, 100);
+            stage.on('touchmove mousemove wheel touchstart mousedown dragstart dragmove touchend mouseup', function (e) {
+                debugCanvas(stage);
+            });
+
+
             // Touchmove logic for multi-touch zoom/pan
             stage.on('touchmove', function (e) {
 
@@ -1851,19 +1876,19 @@
                                                             try {
                                                                 let taskId = uuid();
 
-                                                                
+
                                                                 componentRef.current.taskInfo.disableCanvas = true;
                                                                 componentRef.current.taskInfo.subTasks = ['ai-fill-prompt'];
                                                                 componentRef.current.taskInfo.taskId = taskId;
                                                                 setComponentState({ ...componentRef.current });
-                                                                
+
                                                                 let prompt = document.querySelector('#prompt-input').value;
                                                                 let mask = await canvasAPI.current.getDrawnMask();
                                                                 let composite = await imprintOnImage(canvasAPI.current.componentRef.current.image, mask);
                                                                 console.image(canvasAPI.current.componentRef.current.image.src);
                                                                 console.image(mask.src);
                                                                 console.image(composite.src);
-                                                                
+
                                                                 console.log('started task');
                                                                 let start = Date.now();
                                                                 let result = await ImageAPI.aiFill(canvasAPI.current.componentRef.current.image, mask, composite, prompt);
