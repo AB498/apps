@@ -1,10 +1,10 @@
 {
-    "restartable": "rs",
+    "restartable": "r",
     "ignore": [
         ".git",
-        "node_modules/**/node_modules"
+        "**/node_modules/**"
     ],
-    "exec": "node --trace-deprecation server.js || echo . > x.restart",
+    "exec": "node --trace-deprecation server.js || echo restart > x.restart",
     "watch": [
         "**/*.js",
         "**/*.json",

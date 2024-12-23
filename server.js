@@ -1,4 +1,6 @@
-// npm i -g nodemon express http-proxy-middleware dotenv
+// npm i -g @gradio/client dotenv express http-proxy-middleware nodemon
+// NODE_PATH = C:\Users\Admin\AppData\Roaming\npm\node_modules || /usr/local/lib/node_modules
+
 let serverBaseName = '/web/backend/v1.0';
 
 require('dotenv').config();
@@ -44,6 +46,9 @@ app.get('/', (req, res) => {
 });
 app.get('/test', (req, res) => {
     res.send('test');
+});
+app.get('/img', (req, res) => {
+    res.redirect('/');
 });
 
 app.get('/appnames', (req, res) => {
